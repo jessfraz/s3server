@@ -1,0 +1,15 @@
+FROM golang:latest
+MAINTAINER Jess Frazelle <jess@docker.com>
+
+RUN go get github.com/mitchellh/goamz/aws && \
+	go get github.com/mitchellh/goamz/s3 && \
+	go get github.com/docker/docker/pkg/units && \
+    go get github.com/Sirupsen/logrus
+
+COPY static /src/static
+COPY templates /src/templates
+COPY . /go/src/github.com/jfrazelle/s3server
+RUN cd /go/src/github.com/jfrazelle/s3server && go install . ./...
+ENV PATH $PATH:/go/bin
+
+ENTRYPOINT ["s3server"]
