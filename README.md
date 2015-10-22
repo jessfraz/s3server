@@ -1,6 +1,8 @@
 s3server
 ========
 
+[![Circle CI](https://circleci.com/gh/jfrazelle/s3server.svg?style=svg)](https://circleci.com/gh/jfrazelle/s3server)
+
 Static server for s3 files.
 
 ```console
