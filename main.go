@@ -27,7 +27,7 @@ var (
 )
 
 // cleanBucketName returns the bucket and prefix
-// for a given s3bucket
+// for a given s3bucket.
 func cleanBucketName(bucket string) (string, string) {
 	bucket = strings.TrimPrefix(bucket, "s3://")
 	parts := strings.SplitN(bucket, "/", 2)
@@ -38,7 +38,7 @@ func cleanBucketName(bucket string) (string, string) {
 	return parts[0], parts[1]
 }
 
-// getRegion returns the aws region that is matches a given string
+// getRegion returns the aws region that is matches a given string.
 func getRegion(name string) (aws.Region, error) {
 	var regions = map[string]aws.Region{
 		aws.APNortheast.Name:  aws.APNortheast,
@@ -59,7 +59,7 @@ func getRegion(name string) (aws.Region, error) {
 	return region, nil
 }
 
-// listFiles lists the files in a specific s3 bucket
+// listFiles lists the files in a specific s3 bucket.
 func listFiles(prefix, delimiter, marker string, maxKeys int, b *s3.Bucket) (files []s3.Key, err error) {
 	resp, err := b.List(prefix, delimiter, marker, maxKeys)
 	if err != nil {
@@ -84,11 +84,11 @@ func listFiles(prefix, delimiter, marker string, maxKeys int, b *s3.Bucket) (fil
 }
 
 // JSONResponse is a map[string]string
-// response from the web server
+// response from the web server.
 type JSONResponse map[string]string
 
 // String returns the string representation of the
-// JSONResponse object
+// JSONResponse object.
 func (j JSONResponse) String() string {
 	str, err := json.MarshalIndent(j, "", "  ")
 	if err != nil {
@@ -100,7 +100,7 @@ func (j JSONResponse) String() string {
 	return string(str)
 }
 
-// Handler is the object which contains data to pass to the http handler functions
+// Handler is the object which contains data to pass to the http handler functions.
 type Handler struct {
 	Files []s3.Key
 }
@@ -132,7 +132,7 @@ func (h *Handler) serveTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 // writeError sends an error back to the requester
-// and also logrus. the error
+// and also logs the error.
 func writeError(w http.ResponseWriter, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, JSONResponse{
