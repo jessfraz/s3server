@@ -1,16 +1,34 @@
-FROM debian:jessie
+FROM alpine
 MAINTAINER Jessica Frazelle <jess@docker.com>
 
-RUN apt-get update && apt-get install -y \
-	ca-certificates \
-	--no-install-recommends \
-	&& rm -rf /var/lib/apt/lists/*
+ENV PATH /go/bin:/usr/local/go/bin:$PATH
+ENV GOPATH /go
 
-ADD https://jesss.s3.amazonaws.com/binaries/s3server /usr/local/bin/s3server
+RUN	apk update && apk add \
+	ca-certificates \
+	&& rm -rf /var/cache/apk/*
 
 COPY static /src/static
 COPY templates /src/templates
+COPY . /go/src/github.com/jfrazelle/s3server
 
-RUN chmod +x /usr/local/bin/s3server
+RUN buildDeps=' \
+		go \
+		git \
+		gcc \
+		libc-dev \
+		libgcc \
+	' \
+	set -x \
+	&& apk update \
+	&& apk add $buildDeps \
+	&& cd /go/src/github.com/jfrazelle/s3server \
+	&& go get -d -v github.com/jfrazelle/s3server \
+	&& go build -o /usr/bin/s3server . \
+	&& apk del $buildDeps \
+	&& rm -rf /var/cache/apk/* \
+	&& rm -rf /go \
+	&& echo "Build complete."
 
-ENTRYPOINT [ "/usr/local/bin/s3server" ]
+
+ENTRYPOINT [ "s3server" ]
