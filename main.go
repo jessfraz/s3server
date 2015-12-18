@@ -11,7 +11,7 @@ import (
 	"text/template"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/docker/docker/pkg/units"
+	units "github.com/docker/go-units"
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
 )
