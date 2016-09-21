@@ -1,0 +1,72 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/Sirupsen/logrus",
+			"repository": "https://github.com/Sirupsen/logrus",
+			"vcs": "git",
+			"revision": "3ec0642a7fb6488f65b06f9040adc67e3990296a",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/docker/go-units",
+			"repository": "https://github.com/docker/go-units",
+			"vcs": "git",
+			"revision": "f2145db703495b2e525c59662db69a7344b00bb8",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/mitchellh/goamz/aws",
+			"repository": "https://github.com/mitchellh/goamz",
+			"vcs": "git",
+			"revision": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf",
+			"branch": "master",
+			"path": "aws",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/mitchellh/goamz/s3",
+			"repository": "https://github.com/mitchellh/goamz",
+			"vcs": "git",
+			"revision": "caaaea8b30ee15616494ee68abd5d8ebbbef05cf",
+			"branch": "master",
+			"path": "/s3",
+			"notests": true
+		},
+		{
+			"importpath": "github.com/vaughan0/go-ini",
+			"repository": "https://github.com/vaughan0/go-ini",
+			"vcs": "git",
+			"revision": "a98ad7ee00ec53921f08832bc06ecf7fd600e6a1",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "golang.org/x/sys/unix",
+			"repository": "https://go.googlesource.com/sys",
+			"vcs": "git",
+			"revision": "8f0908ab3b2457e2e15403d3697c9ef5cb4b57a9",
+			"branch": "master",
+			"path": "/unix",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/airbrake/gobrake.v2",
+			"repository": "https://gopkg.in/airbrake/gobrake.v2",
+			"vcs": "git",
+			"revision": "5d77bd50d083834501349f8be70197b26963674d",
+			"branch": "master",
+			"notests": true
+		},
+		{
+			"importpath": "gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"repository": "https://gopkg.in/gemnasium/logrus-airbrake-hook.v2",
+			"vcs": "git",
+			"revision": "31e6fd4bd5a98d8ee7673d24bc54ec73c31810dd",
+			"branch": "master",
+			"notests": true
+		}
+	]
+}
