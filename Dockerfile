@@ -7,6 +7,8 @@ ENV GOPATH /go
 RUN	apk add --no-cache \
 	ca-certificates
 
+COPY static /src/static
+COPY templates /src/templates
 COPY . /go/src/github.com/jfrazelle/s3server
 
 RUN set -x \
