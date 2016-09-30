@@ -1,7 +1,7 @@
 s3server
 ========
 
-[![Travis CI](https://travis-ci.org/jfrazelle/s3server.svg?branch=master)](https://travis-ci.org/jfrazelle/s3server)
+[![Travis CI](https://travis-ci.org/jessfraz/s3server.svg?branch=master)](https://travis-ci.org/jessfraz/s3server)
 
 Static server for s3 files.
 

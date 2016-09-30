@@ -9,7 +9,7 @@ RUN	apk add --no-cache \
 
 COPY static /src/static
 COPY templates /src/templates
-COPY . /go/src/github.com/jfrazelle/s3server
+COPY . /go/src/github.com/jessfraz/s3server
 
 RUN set -x \
 	&& apk add --no-cache --virtual .build-deps \
@@ -18,7 +18,7 @@ RUN set -x \
 		gcc \
 		libc-dev \
 		libgcc \
-	&& cd /go/src/github.com/jfrazelle/s3server \
+	&& cd /go/src/github.com/jessfraz/s3server \
 	&& go build -o /usr/bin/s3server . \
 	&& apk del .build-deps \
 	&& rm -rf /go \
