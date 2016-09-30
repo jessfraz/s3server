@@ -96,29 +96,33 @@ func main() {
 }
 
 type object struct {
-	Name string
-	Size int64
+	Name    string
+	BaseURL string
+	Size    int64
 }
 
 type s3Provider struct {
-	bucket string
-	prefix string
-	client *s3.S3
-	ctx    context.Context
-	b      *s3.Bucket
+	bucket  string
+	prefix  string
+	baseURL string
+	client  *s3.S3
+	ctx     context.Context
+	b       *s3.Bucket
 }
 
 type gcsProvider struct {
-	bucket string
-	prefix string
-	client *storage.Client
-	ctx    context.Context
-	b      *storage.BucketHandle
+	bucket  string
+	prefix  string
+	baseURL string
+	client  *storage.Client
+	ctx     context.Context
+	b       *storage.BucketHandle
 }
 
 type cloud interface {
 	List(prefix, delimiter, marker string, max int, q *storage.Query) ([]object, error)
 	Prefix() string
+	BaseURL() string
 }
 
 func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (cloud, error) {
@@ -139,6 +143,7 @@ func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (c
 		p.client = s3.New(auth, region)
 		bucket, p.prefix = cleanBucketName(p.bucket)
 		p.b = p.client.Bucket(bucket)
+		p.baseURL = p.bucket + ".s3.amazonaws.com"
 		return &p, nil
 	}
 
@@ -151,6 +156,7 @@ func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (c
 	p.client = client
 	p.bucket, p.prefix = cleanBucketName(p.bucket)
 	p.b = client.Bucket(p.bucket)
+	p.baseURL = p.bucket + ".storage.googleapis.com"
 	return &p, nil
 }
 
@@ -164,8 +170,9 @@ func (c *s3Provider) List(prefix, delimiter, marker string, max int, q *storage.
 	// append to files
 	for _, f := range resp.Contents {
 		files = append(files, object{
-			Name: f.Key,
-			Size: f.Size,
+			Name:    f.Key,
+			Size:    f.Size,
+			BaseURL: c.BaseURL(),
 		})
 	}
 
@@ -188,6 +195,11 @@ func (c *s3Provider) Prefix() string {
 	return c.prefix
 }
 
+// BaseURL returns the baseURL in an s3 bucket.
+func (c *s3Provider) BaseURL() string {
+	return c.baseURL
+}
+
 // List returns the files in an gcs bucket.
 func (c *gcsProvider) List(prefix, delimiter, marker string, max int, q *storage.Query) (files []object, err error) {
 	resp, err := c.b.List(c.ctx, q)
@@ -198,8 +210,9 @@ func (c *gcsProvider) List(prefix, delimiter, marker string, max int, q *storage
 	// append to files
 	for _, f := range resp.Results {
 		files = append(files, object{
-			Name: f.Name,
-			Size: f.Size,
+			Name:    f.Name,
+			Size:    f.Size,
+			BaseURL: c.BaseURL(),
 		})
 	}
 
@@ -220,6 +233,11 @@ func (c *gcsProvider) List(prefix, delimiter, marker string, max int, q *storage
 // Prefix returns the prefix in an gcs bucket.
 func (c *gcsProvider) Prefix() string {
 	return c.prefix
+}
+
+// BaseURL returns the baseURL in an gcs bucket.
+func (c *gcsProvider) BaseURL() string {
+	return c.baseURL
 }
 
 // cleanBucketName returns the bucket and prefix

@@ -28,11 +28,11 @@
             {{ range $key, $value := . }}
             <tr>
                 <td valign="top">
-                    <a href="//hugthief.s3.amazonaws.com/{{ $value.Name }}">
+                    <a href="//{{$value.BaseURL}}/{{ $value.Name }}">
                         <img src="/static/icons/{{ $value.Name | ext }}.png" alt="[IMG]" /></a>
                 </td>
                 <td>
-                    <a href="//hugthief.s3.amazonaws.com/{{ $value.Name }}">{{ $value.Name | base }}</a>
+                    <a href="//{{$value.BaseURL}}/{{ $value.Name }}">{{ $value.Name | base }}</a>
                 </td>
                 <td align="right">{{ $value.Size | size }}</td>
             </tr>
