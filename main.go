@@ -156,7 +156,10 @@ func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (c
 	p.client = client
 	p.bucket, p.prefix = cleanBucketName(p.bucket)
 	p.b = client.Bucket(p.bucket)
-	p.baseURL = p.bucket + ".storage.googleapis.com"
+	p.baseURL = p.bucket
+	if !strings.Contains(p.bucket, "j3ss.co") {
+		p.baseURL += ".storage.googleapis.com"
+	}
 	return &p, nil
 }
 
