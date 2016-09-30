@@ -10,21 +10,217 @@ import (
 	"strings"
 	"text/template"
 
+	"cloud.google.com/go/storage"
 	"github.com/Sirupsen/logrus"
 	units "github.com/docker/go-units"
 	"github.com/mitchellh/goamz/aws"
 	"github.com/mitchellh/goamz/s3"
+	"golang.org/x/net/context"
 )
 
 var (
-	s3Bucket    string
+	provider string
+	bucket   string
+
 	s3AccessKey string
 	s3SecretKey string
 	s3Region    string
-	port        string
-	certFile    string
-	keyFile     string
+
+	port     string
+	certFile string
+	keyFile  string
 )
+
+func init() {
+	flag.StringVar(&provider, "provider", "s3", "cloud provider (ex. s3, gcs)")
+	flag.StringVar(&bucket, "bucket", "", "bucket path from which to serve files")
+
+	flag.StringVar(&s3AccessKey, "s3key", "", "s3 access key")
+	flag.StringVar(&s3SecretKey, "s3secret", "", "s3 access secret")
+	flag.StringVar(&s3Region, "s3region", "us-west-2", "aws region for the bucket")
+
+	flag.StringVar(&port, "p", "8080", "port for server to run on")
+
+	flag.StringVar(&certFile, "cert", "", "path to ssl certificate")
+	flag.StringVar(&keyFile, "key", "", "path to ssl key")
+
+	flag.Parse()
+
+	if provider != "s3" && provider != "gcs" {
+		logrus.Fatalf("%s is not a valid provider, try `s3` or `gcs`.", provider)
+	}
+}
+
+func main() {
+	// create a new provider
+	p, err := newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey)
+	if err != nil {
+		logrus.Fatalf("Creating new provider failed: %v", err)
+	}
+
+	// get the files
+	max := 2000
+	q := &storage.Query{
+		Prefix:     p.Prefix(),
+		MaxResults: max,
+	}
+	files, err := p.List(p.Prefix(), p.Prefix(), "", max, q)
+	if err != nil {
+		logrus.Fatalf("Listing all files in bucket failed: %v", err)
+	}
+
+	// create mux server
+	mux := http.NewServeMux()
+
+	// static files handler
+	staticHandler := http.StripPrefix("/static/", http.FileServer(http.Dir("/src/static")))
+	mux.Handle("/static/", staticHandler)
+
+	// template handler
+	h := handler{
+		Files: files,
+	}
+	mux.HandleFunc("/", h.serveTemplate)
+
+	// set up the server
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
+	}
+	logrus.Infof("Starting server on port %q", port)
+	if certFile != "" && keyFile != "" {
+		logrus.Fatal(server.ListenAndServeTLS(certFile, keyFile))
+	} else {
+		logrus.Fatal(server.ListenAndServe())
+	}
+}
+
+type object struct {
+	Name string
+	Size int64
+}
+
+type s3Provider struct {
+	bucket string
+	prefix string
+	client *s3.S3
+	ctx    context.Context
+	b      *s3.Bucket
+}
+
+type gcsProvider struct {
+	bucket string
+	prefix string
+	client *storage.Client
+	ctx    context.Context
+	b      *storage.BucketHandle
+}
+
+type cloud interface {
+	List(prefix, delimiter, marker string, max int, q *storage.Query) ([]object, error)
+	Prefix() string
+}
+
+func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (cloud, error) {
+	if provider == "s3" {
+		// auth with aws
+		auth, err := aws.GetAuth(s3AccessKey, s3SecretKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// create the client
+		region, err := getRegion(s3Region)
+		if err != nil {
+			return nil, err
+		}
+
+		p := s3Provider{bucket: bucket}
+		p.client = s3.New(auth, region)
+		bucket, p.prefix = cleanBucketName(p.bucket)
+		p.b = p.client.Bucket(bucket)
+		return &p, nil
+	}
+
+	p := gcsProvider{bucket: bucket}
+	p.ctx = context.Background()
+	client, err := storage.NewClient(p.ctx)
+	if err != nil {
+		return nil, err
+	}
+	p.client = client
+	p.b = client.Bucket(bucket)
+	_, p.prefix = cleanBucketName(p.bucket)
+	return &p, nil
+}
+
+// List returns the files in an s3 bucket.
+func (c *s3Provider) List(prefix, delimiter, marker string, max int, q *storage.Query) (files []object, err error) {
+	resp, err := c.b.List(prefix, delimiter, marker, max)
+	if err != nil {
+		return nil, err
+	}
+
+	// append to files
+	for _, f := range resp.Contents {
+		files = append(files, object{
+			Name: f.Key,
+			Size: f.Size,
+		})
+	}
+
+	// recursion for the recursion god
+	if resp.IsTruncated && resp.NextMarker != "" {
+		f, err := c.List(resp.Prefix, resp.Delimiter, resp.NextMarker, resp.MaxKeys, q)
+		if err != nil {
+			return nil, err
+		}
+
+		// append to files
+		files = append(files, f...)
+	}
+
+	return files, nil
+}
+
+// Prefix returns the prefix in an s3 bucket.
+func (c *s3Provider) Prefix() string {
+	return c.prefix
+}
+
+// List returns the files in an gcs bucket.
+func (c *gcsProvider) List(prefix, delimiter, marker string, max int, q *storage.Query) (files []object, err error) {
+	resp, err := c.b.List(c.ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	// append to files
+	for _, f := range resp.Results {
+		files = append(files, object{
+			Name: f.Name,
+			Size: f.Size,
+		})
+	}
+
+	// recursion for the recursion god
+	if resp.Next != nil {
+		f, err := c.List(prefix, delimiter, marker, max, resp.Next)
+		if err != nil {
+			return nil, err
+		}
+
+		// append to files
+		files = append(files, f...)
+	}
+
+	return files, nil
+}
+
+// Prefix returns the prefix in an gcs bucket.
+func (c *gcsProvider) Prefix() string {
+	return c.prefix
+}
 
 // cleanBucketName returns the bucket and prefix
 // for a given s3bucket.
@@ -59,30 +255,6 @@ func getRegion(name string) (aws.Region, error) {
 	return region, nil
 }
 
-// listFiles lists the files in a specific s3 bucket.
-func listFiles(prefix, delimiter, marker string, maxKeys int, b *s3.Bucket) (files []s3.Key, err error) {
-	resp, err := b.List(prefix, delimiter, marker, maxKeys)
-	if err != nil {
-		return nil, err
-	}
-
-	// append to files
-	files = append(files, resp.Contents...)
-
-	// recursion for the recursion god
-	if resp.IsTruncated && resp.NextMarker != "" {
-		f, err := listFiles(resp.Prefix, resp.Delimiter, resp.NextMarker, resp.MaxKeys, b)
-		if err != nil {
-			return nil, err
-		}
-
-		// append to files
-		files = append(files, f...)
-	}
-
-	return files, nil
-}
-
 // JSONResponse is a map[string]string
 // response from the web server.
 type JSONResponse map[string]string
@@ -100,12 +272,12 @@ func (j JSONResponse) String() string {
 	return string(str)
 }
 
-// Handler is the object which contains data to pass to the http handler functions.
-type Handler struct {
-	Files []s3.Key
+// handler is the object which contains data to pass to the http handler functions.
+type handler struct {
+	Files []object
 }
 
-func (h *Handler) serveTemplate(w http.ResponseWriter, r *http.Request) {
+func (h *handler) serveTemplate(w http.ResponseWriter, r *http.Request) {
 	templateDir := path.Join("/src", "templates")
 	lp := path.Join(templateDir, "layout.html")
 
@@ -140,65 +312,4 @@ func writeError(w http.ResponseWriter, msg string) {
 	})
 	logrus.Printf("writing error: %s", msg)
 	return
-}
-
-func init() {
-	flag.StringVar(&s3Bucket, "s3bucket", "", "bucket path from which to serve files")
-	flag.StringVar(&s3AccessKey, "s3key", "", "s3 access key")
-	flag.StringVar(&s3SecretKey, "s3secret", "", "s3 access secret")
-	flag.StringVar(&s3Region, "s3region", "us-west-2", "aws region for the bucket")
-	flag.StringVar(&port, "p", "8080", "port for server to run on")
-
-	flag.StringVar(&certFile, "cert", "", "path to ssl certificate")
-	flag.StringVar(&keyFile, "key", "", "path to ssl key")
-	flag.Parse()
-}
-
-func main() {
-	// auth with aws
-	auth, err := aws.GetAuth(s3AccessKey, s3SecretKey)
-	if err != nil {
-		logrus.Fatalf("Could not auth to AWS: %v", err)
-	}
-
-	// create the client
-	region, err := getRegion(s3Region)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-	client := s3.New(auth, region)
-
-	// get the files in the bucket
-	bucket, prefix := cleanBucketName(s3Bucket)
-	// get the bucket
-	b := client.Bucket(bucket)
-	files, err := listFiles(prefix, prefix, "", 2000, b)
-	if err != nil {
-		logrus.Fatalf("Listing all files in bucket failed: %v", err)
-	}
-
-	// create mux server
-	mux := http.NewServeMux()
-
-	// static files handler
-	staticHandler := http.StripPrefix("/static/", http.FileServer(http.Dir("/src/static")))
-	mux.Handle("/static/", staticHandler)
-
-	// template handler
-	h := Handler{
-		Files: files,
-	}
-	mux.HandleFunc("/", h.serveTemplate)
-
-	// set up the server
-	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: mux,
-	}
-	logrus.Infof("Starting server on port %q", port)
-	if certFile != "" && keyFile != "" {
-		logrus.Fatal(server.ListenAndServeTLS(certFile, keyFile))
-	} else {
-		logrus.Fatal(server.ListenAndServe())
-	}
 }
