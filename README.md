@@ -29,13 +29,22 @@ Usage of ./s3server:
 **run with the docker image**
 
 ```console
+# On AWS S3
 $ docker run -d \
     --restart always \
     -e AWS_ACCESS_KEY_ID \
     -e AWS_SECRET_ACCESS_KEY \
     -p 8080:8080 \
     --name s3server \
-    jess/s3server -bucket s3://hugthief/gifs
+    r.j3ss.co/s3server -bucket s3://hugthief/gifs
+
+# On Google Cloud Storage
+$ docker run --restart always -d \
+    --name gifs \
+    -p 8080:8080 \
+    -v ~/configs/path/config.json:/creds.json:ro \
+    -e GOOGLE_APPLICATION_CREDENTIALS=/creds.json \
+    r.j3ss.co/s3server -provider gcs -bucket gcs://misc.j3ss.co/gifs
 ```
 
 ![screenshot](screenshot.png)
