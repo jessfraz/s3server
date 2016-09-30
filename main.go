@@ -149,8 +149,8 @@ func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (c
 		return nil, err
 	}
 	p.client = client
-	p.b = client.Bucket(bucket)
 	p.bucket, p.prefix = cleanBucketName(p.bucket)
+	p.b = client.Bucket(p.bucket)
 	return &p, nil
 }
 
