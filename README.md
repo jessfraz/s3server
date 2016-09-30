@@ -35,7 +35,7 @@ $ docker run -d \
     -e AWS_SECRET_ACCESS_KEY \
     -p 8080:8080 \
     --name s3server \
-    jess/s3server -s3bucket s3://hugthief/gifs
+    jess/s3server -bucket s3://hugthief/gifs
 ```
 
 ![screenshot](screenshot.png)
