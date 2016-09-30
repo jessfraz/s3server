@@ -150,7 +150,7 @@ func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (c
 	}
 	p.client = client
 	p.b = client.Bucket(bucket)
-	_, p.prefix = cleanBucketName(p.bucket)
+	p.bucket, p.prefix = cleanBucketName(p.bucket)
 	return &p, nil
 }
 
@@ -226,6 +226,7 @@ func (c *gcsProvider) Prefix() string {
 // for a given s3bucket.
 func cleanBucketName(bucket string) (string, string) {
 	bucket = strings.TrimPrefix(bucket, "s3://")
+	bucket = strings.TrimPrefix(bucket, "gcs://")
 	parts := strings.SplitN(bucket, "/", 2)
 	if len(parts) == 1 {
 		return bucket, "/"
