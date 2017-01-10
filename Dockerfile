@@ -24,5 +24,6 @@ RUN set -x \
 	&& rm -rf /go \
 	&& echo "Build complete."
 
+WORKDIR /src
 
 ENTRYPOINT [ "s3server" ]
