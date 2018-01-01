@@ -5,9 +5,27 @@ s3server
 
 Static server for s3 or gcs files.
 
+## Installation
+
+#### Binaries
+
+- **darwin** [386](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-darwin-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-darwin-amd64)
+- **freebsd** [386](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-freebsd-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-freebsd-amd64)
+- **linux** [386](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-linux-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-linux-amd64) / [arm](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-linux-arm) / [arm64](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-linux-arm64)
+- **solaris** [amd64](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-solaris-amd64)
+- **windows** [386](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-windows-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.0.0/s3server-windows-amd64)
+
+#### Via Go
+
+```bash
+$ go get github.com/jessfraz/s3server
+```
+
+## Usage
+
 ```console
 $ s3server -h
-Usage of ./s3server:
+Usage of s3server:
   -bucket string
         bucket path from which to serve files
   -cert string

@@ -14,6 +14,20 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/Sirupsen/logrus"
 	units "github.com/docker/go-units"
+	"github.com/jessfraz/s3server/version"
+)
+
+const (
+	BANNER = `     _        _   _
+ ___| |_ __ _| |_(_) ___ ___  ___ _ ____   _____ _ __
+/ __| __/ _` + "`" + ` | __| |/ __/ __|/ _ \ '__\ \ / / _ \ '__|
+\__ \ || (_| | |_| | (__\__ \  __/ |   \ V /  __/ |
+|___/\__\__,_|\__|_|\___|___/\___|_|    \_/ \___|_|
+ Server to index & view files in a s3 or Google Cloud Storage bucket.
+ Version: %s
+ Build: %s
+
+`
 )
 
 var (
@@ -30,6 +44,8 @@ var (
 	keyFile  string
 
 	updating bool
+
+	vrsn bool
 )
 
 func init() {
@@ -47,6 +63,21 @@ func init() {
 	flag.StringVar(&keyFile, "key", "", "path to ssl key")
 
 	flag.Parse()
+
+	flag.BoolVar(&vrsn, "version", false, "print version and exit")
+	flag.BoolVar(&vrsn, "v", false, "print version and exit (shorthand)")
+
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, version.VERSION, version.GITCOMMIT))
+		flag.PrintDefaults()
+	}
+
+	flag.Parse()
+
+	if vrsn {
+		fmt.Printf("staticserver version %s, build %s", version.VERSION, version.GITCOMMIT)
+		os.Exit(0)
+	}
 
 	if provider != "s3" && provider != "gcs" {
 		logrus.Fatalf("%s is not a valid provider, try `s3` or `gcs`.", provider)
