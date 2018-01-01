@@ -24,6 +24,7 @@ const (
 / __| __/ _` + "`" + ` | __| |/ __/ __|/ _ \ '__\ \ / / _ \ '__|
 \__ \ || (_| | |_| | (__\__ \  __/ |   \ V /  __/ |
 |___/\__\__,_|\__|_|\___|___/\___|_|    \_/ \___|_|
+
  Server to index & view files in a s3 or Google Cloud Storage bucket.
  Version: %s
  Build: %s
@@ -62,8 +63,6 @@ func init() {
 
 	flag.StringVar(&certFile, "cert", "", "path to ssl certificate")
 	flag.StringVar(&keyFile, "key", "", "path to ssl key")
-
-	flag.Parse()
 
 	flag.BoolVar(&vrsn, "version", false, "print version and exit")
 	flag.BoolVar(&vrsn, "v", false, "print version and exit (shorthand)")

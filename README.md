@@ -25,7 +25,16 @@ $ go get github.com/jessfraz/s3server
 
 ```console
 $ s3server -h
-Usage of s3server:
+     _        _   _
+ ___| |_ __ _| |_(_) ___ ___  ___ _ ____   _____ _ __
+/ __| __/ _` | __| |/ __/ __|/ _ \ '__\ \ / / _ \ '__|
+\__ \ || (_| | |_| | (__\__ \  __/ |   \ V /  __/ |
+|___/\__\__,_|\__|_|\___|___/\___|_|    \_/ \___|_|
+
+ Server to index & view files in a s3 or Google Cloud Storage bucket.
+ Version: v0.0.0
+ Build: e5a60e2
+
   -bucket string
         bucket path from which to serve files
   -cert string
@@ -44,6 +53,9 @@ Usage of s3server:
         aws region for the bucket (default "us-west-2")
   -s3secret string
         s3 access secret
+  -v    print version and exit (shorthand)
+  -version
+        print version and exit
 ```
 
 **run with the docker image**
