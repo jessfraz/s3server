@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	// BANNER is what is printed for help/info output.
 	BANNER = `     _        _   _
  ___| |_ __ _| |_(_) ___ ___  ___ _ ____   _____ _ __
 / __| __/ _` + "`" + ` | __| |/ __/ __|/ _ \ '__\ \ / / _ \ '__|
