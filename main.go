@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -210,9 +211,32 @@ func createStaticIndex(p cloud, staticDir string) error {
 
 	index := filepath.Join(staticDir, "index.html")
 	logrus.Infof("renaming the temporary file %s to %s", f.Name(), index)
-	if err := os.Rename(f.Name(), index); err != nil {
+	if _, err := moveFile(index, f.Name()); err != nil {
 		return fmt.Errorf("renaming result from %s to %s failed: %v", f.Name(), index, err)
 	}
 	updating = false
 	return nil
+}
+
+func moveFile(dst, src string) (int64, error) {
+	sf, err := os.Open(src)
+	if err != nil {
+		return 0, err
+	}
+	defer sf.Close()
+
+	df, err := os.Create(dst)
+	if err != nil {
+		return 0, err
+	}
+	defer df.Close()
+
+	i, err := io.Copy(df, sf)
+	if err != nil {
+		return i, err
+	}
+
+	// Cleanup
+	err = os.Remove(src)
+	return i, err
 }
