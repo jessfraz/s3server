@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/iterator"
 )
 
 type gcsProvider struct {
@@ -17,29 +18,22 @@ type gcsProvider struct {
 
 // List returns the files in an gcs bucket.
 func (c *gcsProvider) List(prefix, delimiter, marker string, max int, q *storage.Query) (files []object, err error) {
-	resp, err := c.b.List(c.ctx, q)
-	if err != nil {
-		return nil, err
-	}
+	resp := c.b.Objects(c.ctx, q)
 
 	// append to files
-	for _, f := range resp.Results {
+	for {
+		f, err := resp.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
 		files = append(files, object{
 			Name:    f.Name,
 			Size:    f.Size,
 			BaseURL: c.BaseURL(),
 		})
-	}
-
-	// recursion for the recursion god
-	if resp.Next != nil {
-		f, err := c.List(prefix, delimiter, marker, max, resp.Next)
-		if err != nil {
-			return nil, err
-		}
-
-		// append to files
-		files = append(files, f...)
 	}
 
 	return files, nil

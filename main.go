@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/Sirupsen/logrus"
 	units "github.com/docker/go-units"
 	"github.com/jessfraz/s3server/version"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -161,8 +161,7 @@ func createStaticIndex(p cloud, staticDir string) error {
 	// get the files
 	max := 2000
 	q := &storage.Query{
-		Prefix:     p.Prefix(),
-		MaxResults: max,
+		Prefix: p.Prefix(),
 	}
 
 	logrus.Infof("fetching files from %s", p.BaseURL())

@@ -19,7 +19,11 @@ Google Cloud Storage stores data in named objects, which are grouped into bucket
 More information about Google Cloud Storage is available at
 https://cloud.google.com/storage/docs.
 
-Note: This package is experimental and may make backwards-incompatible changes.
+All of the methods of this package use exponential backoff to retry calls
+that fail with certain errors, as described in
+https://cloud.google.com/storage/docs/exponential-backoff.
+
+Note: This package is in beta.  Some backwards-incompatible changes may occur.
 
 
 Creating a Client
@@ -31,6 +35,13 @@ To start working with this package, create a client:
     if err != nil {
         // TODO: Handle error.
     }
+
+The client will use your default application credentials.
+
+If you only wish to access public data, you can create
+an unauthenticated client with
+
+    client, err := storage.NewClient(ctx, option.WithoutAuthentication())
 
 Buckets
 
@@ -134,8 +145,7 @@ For example, say you've read an object's metadata into objAttrs. Now
 you want to write to that object, but only if its contents haven't changed
 since you read it. Here is how to express that:
 
-    cond := storage.IfGenerationMatch(objAttrs.Generation)
-    w = obj.WithConditions(cond).NewWriter(ctx)
+    w = obj.If(storage.Conditions{GenerationMatch: objAttrs.Generation}).NewWriter(ctx)
     // Proceed with writing as above.
 
 Signed URLs
@@ -149,5 +159,10 @@ SignedURL for details.
         // TODO: Handle error.
     }
     fmt.Println(url)
+
+Authentication
+
+See examples of authorization and authentication at
+https://godoc.org/cloud.google.com/go#pkg-examples.
 */
 package storage // import "cloud.google.com/go/storage"
