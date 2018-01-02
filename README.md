@@ -68,6 +68,7 @@ $ docker run -d \
     -e AWS_SECRET_ACCESS_KEY \
     -p 8080:8080 \
     --name s3server \
+    --tmpfs /tmp \
     r.j3ss.co/s3server -bucket s3://hugthief/gifs
 
 # On Google Cloud Storage
@@ -76,6 +77,7 @@ $ docker run --restart always -d \
     -p 8080:8080 \
     -v ~/configs/path/config.json:/creds.json:ro \
     -e GOOGLE_APPLICATION_CREDENTIALS=/creds.json \
+    --tmpfs /tmp \
     r.j3ss.co/s3server -provider gcs -bucket gcs://misc.j3ss.co/gifs
 ```
 
