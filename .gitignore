@@ -44,3 +44,7 @@ Icon
 
 s3server
 cross/
+
+# Go coverage results
+coverage.txt
+profile.out
