@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/net/context"
 	btapb "google.golang.org/genproto/googleapis/bigtable/admin/v2"
 	btpb "google.golang.org/genproto/googleapis/bigtable/v2"
@@ -46,7 +48,7 @@ func TestConcurrentMutationsReadModifyAndGC(t *testing.T) {
 		Name: name,
 		Modifications: []*btapb.ModifyColumnFamiliesRequest_Modification{{
 			Id:  "cf",
-			Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Create{&btapb.ColumnFamily{}},
+			Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Create{Create: &btapb.ColumnFamily{}},
 		}},
 	}
 	_, err := s.ModifyColumnFamilies(ctx, req)
@@ -57,8 +59,8 @@ func TestConcurrentMutationsReadModifyAndGC(t *testing.T) {
 		Name: name,
 		Modifications: []*btapb.ModifyColumnFamiliesRequest_Modification{{
 			Id: "cf",
-			Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Update{&btapb.ColumnFamily{
-				GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}},
+			Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Update{Update: &btapb.ColumnFamily{
+				GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}},
 			}},
 		}},
 	}
@@ -70,7 +72,7 @@ func TestConcurrentMutationsReadModifyAndGC(t *testing.T) {
 	var ts int64
 	ms := func() []*btpb.Mutation {
 		return []*btpb.Mutation{{
-			Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+			Mutation: &btpb.Mutation_SetCell_{SetCell: &btpb.Mutation_SetCell{
 				FamilyName:      "cf",
 				ColumnQualifier: []byte(`col`),
 				TimestampMicros: atomic.AddInt64(&ts, 1000),
@@ -85,7 +87,7 @@ func TestConcurrentMutationsReadModifyAndGC(t *testing.T) {
 			Rules: []*btpb.ReadModifyWriteRule{{
 				FamilyName:      "cf",
 				ColumnQualifier: []byte("col"),
-				Rule:            &btpb.ReadModifyWriteRule_IncrementAmount{1},
+				Rule:            &btpb.ReadModifyWriteRule_IncrementAmount{IncrementAmount: 1},
 			}},
 		}
 	}
@@ -99,7 +101,9 @@ func TestConcurrentMutationsReadModifyAndGC(t *testing.T) {
 					RowKey:    []byte(fmt.Sprint(rand.Intn(100))),
 					Mutations: ms(),
 				}
-				s.MutateRow(ctx, req)
+				if _, err := s.MutateRow(ctx, req); err != nil {
+					panic(err) // can't use t.Fatal in goroutine
+				}
 			}
 		}()
 		wg.Add(1)
@@ -139,8 +143,8 @@ func TestCreateTableWithFamily(t *testing.T) {
 	ctx := context.Background()
 	newTbl := btapb.Table{
 		ColumnFamilies: map[string]*btapb.ColumnFamily{
-			"cf1": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{123}}},
-			"cf2": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{456}}},
+			"cf1": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 123}}},
+			"cf2": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 456}}},
 		},
 	}
 	cTbl, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
@@ -184,7 +188,7 @@ func TestSampleRowKeys(t *testing.T) {
 	ctx := context.Background()
 	newTbl := btapb.Table{
 		ColumnFamilies: map[string]*btapb.ColumnFamily{
-			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}}},
+			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}}},
 		},
 	}
 	tbl, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
@@ -200,10 +204,10 @@ func TestSampleRowKeys(t *testing.T) {
 			TableName: tbl.Name,
 			RowKey:    []byte("row-" + strconv.Itoa(i)),
 			Mutations: []*btpb.Mutation{{
-				Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+				Mutation: &btpb.Mutation_SetCell_{SetCell: &btpb.Mutation_SetCell{
 					FamilyName:      "cf",
 					ColumnQualifier: []byte("col"),
-					TimestampMicros: 0,
+					TimestampMicros: 1000,
 					Value:           val,
 				}},
 			}},
@@ -235,7 +239,7 @@ func TestDropRowRange(t *testing.T) {
 	ctx := context.Background()
 	newTbl := btapb.Table{
 		ColumnFamilies: map[string]*btapb.ColumnFamily{
-			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}}},
+			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}}},
 		},
 	}
 	tblInfo, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
@@ -255,10 +259,10 @@ func TestDropRowRange(t *testing.T) {
 					TableName: tblInfo.Name,
 					RowKey:    []byte(prefix + strconv.Itoa(i)),
 					Mutations: []*btpb.Mutation{{
-						Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+						Mutation: &btpb.Mutation_SetCell_{SetCell: &btpb.Mutation_SetCell{
 							FamilyName:      "cf",
 							ColumnQualifier: []byte("col"),
-							TimestampMicros: 0,
+							TimestampMicros: 1000,
 							Value:           []byte{},
 						}},
 					}},
@@ -274,7 +278,7 @@ func TestDropRowRange(t *testing.T) {
 	tblSize := tbl.rows.Len()
 	req := &btapb.DropRowRangeRequest{
 		Name:   tblInfo.Name,
-		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{[]byte("AAA")},
+		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{RowKeyPrefix: []byte("AAA")},
 	}
 	if _, err = s.DropRowRange(ctx, req); err != nil {
 		t.Fatalf("Dropping first range: %v", err)
@@ -286,7 +290,7 @@ func TestDropRowRange(t *testing.T) {
 
 	req = &btapb.DropRowRangeRequest{
 		Name:   tblInfo.Name,
-		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{[]byte("DDD")},
+		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{RowKeyPrefix: []byte("DDD")},
 	}
 	if _, err = s.DropRowRange(ctx, req); err != nil {
 		t.Fatalf("Dropping second range: %v", err)
@@ -298,7 +302,7 @@ func TestDropRowRange(t *testing.T) {
 
 	req = &btapb.DropRowRangeRequest{
 		Name:   tblInfo.Name,
-		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{[]byte("XXX")},
+		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{RowKeyPrefix: []byte("XXX")},
 	}
 	if _, err = s.DropRowRange(ctx, req); err != nil {
 		t.Fatalf("Dropping invalid range: %v", err)
@@ -310,7 +314,7 @@ func TestDropRowRange(t *testing.T) {
 
 	req = &btapb.DropRowRangeRequest{
 		Name:   tblInfo.Name,
-		Target: &btapb.DropRowRangeRequest_DeleteAllDataFromTable{true},
+		Target: &btapb.DropRowRangeRequest_DeleteAllDataFromTable{DeleteAllDataFromTable: true},
 	}
 	if _, err = s.DropRowRange(ctx, req); err != nil {
 		t.Fatalf("Dropping all data: %v", err)
@@ -326,7 +330,7 @@ func TestDropRowRange(t *testing.T) {
 
 	req = &btapb.DropRowRangeRequest{
 		Name:   tblInfo.Name,
-		Target: &btapb.DropRowRangeRequest_DeleteAllDataFromTable{true},
+		Target: &btapb.DropRowRangeRequest_DeleteAllDataFromTable{DeleteAllDataFromTable: true},
 	}
 	if _, err = s.DropRowRange(ctx, req); err != nil {
 		t.Fatalf("Dropping all data: %v", err)
@@ -344,7 +348,7 @@ func TestDropRowRange(t *testing.T) {
 
 	req = &btapb.DropRowRangeRequest{
 		Name:   tblInfo.Name,
-		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{[]byte("BBB")},
+		Target: &btapb.DropRowRangeRequest_RowKeyPrefix{RowKeyPrefix: []byte("BBB")},
 	}
 	if _, err = s.DropRowRange(ctx, req); err != nil {
 		t.Fatalf("Dropping range: %v", err)
@@ -373,7 +377,7 @@ func TestReadRows(t *testing.T) {
 	}
 	newTbl := btapb.Table{
 		ColumnFamilies: map[string]*btapb.ColumnFamily{
-			"cf0": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}}},
+			"cf0": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}}},
 		},
 	}
 	tblInfo, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
@@ -384,7 +388,7 @@ func TestReadRows(t *testing.T) {
 		TableName: tblInfo.Name,
 		RowKey:    []byte("row"),
 		Mutations: []*btpb.Mutation{{
-			Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+			Mutation: &btpb.Mutation_SetCell_{SetCell: &btpb.Mutation_SetCell{
 				FamilyName:      "cf0",
 				ColumnQualifier: []byte("col"),
 				TimestampMicros: 1000,
@@ -398,11 +402,11 @@ func TestReadRows(t *testing.T) {
 
 	for _, rowset := range []*btpb.RowSet{
 		{RowKeys: [][]byte{[]byte("row")}},
-		{RowRanges: []*btpb.RowRange{{StartKey: &btpb.RowRange_StartKeyClosed{[]byte("")}}}},
-		{RowRanges: []*btpb.RowRange{{StartKey: &btpb.RowRange_StartKeyClosed{[]byte("r")}}}},
+		{RowRanges: []*btpb.RowRange{{StartKey: &btpb.RowRange_StartKeyClosed{StartKeyClosed: []byte("")}}}},
+		{RowRanges: []*btpb.RowRange{{StartKey: &btpb.RowRange_StartKeyClosed{StartKeyClosed: []byte("r")}}}},
 		{RowRanges: []*btpb.RowRange{{
-			StartKey: &btpb.RowRange_StartKeyClosed{[]byte("")},
-			EndKey:   &btpb.RowRange_EndKeyOpen{[]byte("s")},
+			StartKey: &btpb.RowRange_StartKeyClosed{StartKeyClosed: []byte("")},
+			EndKey:   &btpb.RowRange_EndKeyOpen{EndKeyOpen: []byte("s")},
 		}}},
 	} {
 		mock := &MockReadRowsServer{}
@@ -423,7 +427,7 @@ func TestReadRowsOrder(t *testing.T) {
 	ctx := context.Background()
 	newTbl := btapb.Table{
 		ColumnFamilies: map[string]*btapb.ColumnFamily{
-			"cf0": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}}},
+			"cf0": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}}},
 		},
 	}
 	tblInfo, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
@@ -436,7 +440,7 @@ func TestReadRowsOrder(t *testing.T) {
 			Name: tblInfo.Name,
 			Modifications: []*btapb.ModifyColumnFamiliesRequest_Modification{{
 				Id:  "cf" + strconv.Itoa(i),
-				Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Create{&btapb.ColumnFamily{}},
+				Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Create{Create: &btapb.ColumnFamily{}},
 			}},
 		}
 	}
@@ -454,7 +458,7 @@ func TestReadRowsOrder(t *testing.T) {
 					TableName: tblInfo.Name,
 					RowKey:    []byte("row"),
 					Mutations: []*btpb.Mutation{{
-						Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+						Mutation: &btpb.Mutation_SetCell_{SetCell: &btpb.Mutation_SetCell{
 							FamilyName:      "cf" + strconv.Itoa(fc),
 							ColumnQualifier: []byte("col" + strconv.Itoa(cc)),
 							TimestampMicros: int64((tc + 1) * 1000),
@@ -512,16 +516,17 @@ func TestReadRowsOrder(t *testing.T) {
 
 	// Read with interleave filter
 	inter := &btpb.RowFilter_Interleave{}
-	fnr := &btpb.RowFilter{Filter: &btpb.RowFilter_FamilyNameRegexFilter{"1"}}
-	cqr := &btpb.RowFilter{Filter: &btpb.RowFilter_ColumnQualifierRegexFilter{[]byte("2")}}
+	fnr := &btpb.RowFilter{Filter: &btpb.RowFilter_FamilyNameRegexFilter{FamilyNameRegexFilter: "1"}}
+	cqr := &btpb.RowFilter{Filter: &btpb.RowFilter_ColumnQualifierRegexFilter{ColumnQualifierRegexFilter: []byte("2")}}
 	inter.Filters = append(inter.Filters, fnr, cqr)
 	req = &btpb.ReadRowsRequest{
 		TableName: tblInfo.Name,
 		Rows:      &btpb.RowSet{RowKeys: [][]byte{[]byte("row")}},
 		Filter: &btpb.RowFilter{
-			Filter: &btpb.RowFilter_Interleave_{inter},
+			Filter: &btpb.RowFilter_Interleave_{Interleave: inter},
 		},
 	}
+
 	mock = &MockReadRowsServer{}
 	if err = s.ReadRows(req, mock); err != nil {
 		t.Errorf("ReadRows error: %v", err)
@@ -542,12 +547,14 @@ func TestReadRowsOrder(t *testing.T) {
 			Rules: []*btpb.ReadModifyWriteRule{{
 				FamilyName:      "cf3",
 				ColumnQualifier: []byte("col" + strconv.Itoa(i)),
-				Rule:            &btpb.ReadModifyWriteRule_IncrementAmount{1},
+				Rule:            &btpb.ReadModifyWriteRule_IncrementAmount{IncrementAmount: 1},
 			}},
 		}
 	}
 	for i := count; i > 0; i-- {
-		s.ReadModifyWriteRow(ctx, rmw(i))
+		if _, err := s.ReadModifyWriteRow(ctx, rmw(i)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	req = &btpb.ReadRowsRequest{
 		TableName: tblInfo.Name,
@@ -573,7 +580,7 @@ func TestCheckAndMutateRowWithoutPredicate(t *testing.T) {
 	ctx := context.Background()
 	newTbl := btapb.Table{
 		ColumnFamilies: map[string]*btapb.ColumnFamily{
-			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}}},
+			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}}},
 		},
 	}
 	tbl, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
@@ -587,10 +594,10 @@ func TestCheckAndMutateRowWithoutPredicate(t *testing.T) {
 		TableName: tbl.Name,
 		RowKey:    []byte("row-present"),
 		Mutations: []*btpb.Mutation{{
-			Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+			Mutation: &btpb.Mutation_SetCell_{SetCell: &btpb.Mutation_SetCell{
 				FamilyName:      "cf",
 				ColumnQualifier: []byte("col"),
-				TimestampMicros: 0,
+				TimestampMicros: 1000,
 				Value:           val,
 			}},
 		}},
@@ -617,5 +624,182 @@ func TestCheckAndMutateRowWithoutPredicate(t *testing.T) {
 		t.Errorf("CheckAndMutateRow error: %v", err)
 	} else if got, want := res.PredicateMatched, true; got != want {
 		t.Errorf("Invalid PredicateMatched value: got %t, want %t", got, want)
+	}
+}
+
+func TestServer_ReadModifyWriteRow(t *testing.T) {
+	s := &server{
+		tables: make(map[string]*table),
+	}
+
+	ctx := context.Background()
+	newTbl := btapb.Table{
+		ColumnFamilies: map[string]*btapb.ColumnFamily{
+			"cf": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{MaxNumVersions: 1}}},
+		},
+	}
+	tbl, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
+	if err != nil {
+		t.Fatalf("Creating table: %v", err)
+	}
+
+	req := &btpb.ReadModifyWriteRowRequest{
+		TableName: tbl.Name,
+		RowKey:    []byte("row-key"),
+		Rules: []*btpb.ReadModifyWriteRule{
+			{
+				FamilyName:      "cf",
+				ColumnQualifier: []byte("q1"),
+				Rule: &btpb.ReadModifyWriteRule_AppendValue{
+					AppendValue: []byte("a"),
+				},
+			},
+			// multiple ops for same cell
+			{
+				FamilyName:      "cf",
+				ColumnQualifier: []byte("q1"),
+				Rule: &btpb.ReadModifyWriteRule_AppendValue{
+					AppendValue: []byte("b"),
+				},
+			},
+			// different cell whose qualifier should sort before the prior rules
+			{
+				FamilyName:      "cf",
+				ColumnQualifier: []byte("q0"),
+				Rule: &btpb.ReadModifyWriteRule_IncrementAmount{
+					IncrementAmount: 1,
+				},
+			},
+		},
+	}
+
+	got, err := s.ReadModifyWriteRow(ctx, req)
+
+	if err != nil {
+		t.Fatalf("ReadModifyWriteRow error: %v", err)
+	}
+
+	want := &btpb.ReadModifyWriteRowResponse{
+		Row: &btpb.Row{
+			Key: []byte("row-key"),
+			Families: []*btpb.Family{{
+				Name: "cf",
+				Columns: []*btpb.Column{
+					{
+						Qualifier: []byte("q0"),
+						Cells: []*btpb.Cell{{
+							Value: []byte{0, 0, 0, 0, 0, 0, 0, 1},
+						}},
+					},
+					{
+						Qualifier: []byte("q1"),
+						Cells: []*btpb.Cell{{
+							Value: []byte("ab"),
+						}},
+					},
+				},
+			}},
+		},
+	}
+
+	diff := cmp.Diff(got, want, cmpopts.IgnoreFields(btpb.Cell{}, "TimestampMicros"))
+	if diff != "" {
+		t.Errorf("unexpected response: %s", diff)
+	}
+}
+
+// helper function to populate table data
+func populateTable(ctx context.Context, s *server) (*btapb.Table, error) {
+	newTbl := btapb.Table{
+		ColumnFamilies: map[string]*btapb.ColumnFamily{
+			"cf0": {GcRule: &btapb.GcRule{Rule: &btapb.GcRule_MaxNumVersions{1}}},
+		},
+	}
+	tblInfo, err := s.CreateTable(ctx, &btapb.CreateTableRequest{Parent: "cluster", TableId: "t", Table: &newTbl})
+	if err != nil {
+		return nil, err
+	}
+	count := 3
+	mcf := func(i int) *btapb.ModifyColumnFamiliesRequest {
+		return &btapb.ModifyColumnFamiliesRequest{
+			Name: tblInfo.Name,
+			Modifications: []*btapb.ModifyColumnFamiliesRequest_Modification{{
+				Id:  "cf" + strconv.Itoa(i),
+				Mod: &btapb.ModifyColumnFamiliesRequest_Modification_Create{&btapb.ColumnFamily{}},
+			}},
+		}
+	}
+	for i := 1; i <= count; i++ {
+		_, err = s.ModifyColumnFamilies(ctx, mcf(i))
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Populate the table
+	for fc := 0; fc < count; fc++ {
+		for cc := count; cc > 0; cc-- {
+			for tc := 0; tc < count; tc++ {
+				req := &btpb.MutateRowRequest{
+					TableName: tblInfo.Name,
+					RowKey:    []byte("row"),
+					Mutations: []*btpb.Mutation{{
+						Mutation: &btpb.Mutation_SetCell_{&btpb.Mutation_SetCell{
+							FamilyName:      "cf" + strconv.Itoa(fc),
+							ColumnQualifier: []byte("col" + strconv.Itoa(cc)),
+							TimestampMicros: int64((tc + 1) * 1000),
+							Value:           []byte{},
+						}},
+					}},
+				}
+				if _, err := s.MutateRow(ctx, req); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
+	return tblInfo, nil
+}
+
+func TestFilters(t *testing.T) {
+	tests := []struct {
+		in  *btpb.RowFilter
+		out int
+	}{
+		{in: &btpb.RowFilter{Filter: &btpb.RowFilter_BlockAllFilter{true}}, out: 0},
+		{in: &btpb.RowFilter{Filter: &btpb.RowFilter_BlockAllFilter{false}}, out: 1},
+		{in: &btpb.RowFilter{Filter: &btpb.RowFilter_PassAllFilter{true}}, out: 1},
+		{in: &btpb.RowFilter{Filter: &btpb.RowFilter_PassAllFilter{false}}, out: 0},
+	}
+
+	ctx := context.Background()
+
+	s := &server{
+		tables: make(map[string]*table),
+	}
+
+	tblInfo, err := populateTable(ctx, s)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := &btpb.ReadRowsRequest{
+		TableName: tblInfo.Name,
+		Rows:      &btpb.RowSet{RowKeys: [][]byte{[]byte("row")}},
+	}
+
+	for _, tc := range tests {
+		req.Filter = tc.in
+
+		mock := &MockReadRowsServer{}
+		if err = s.ReadRows(req, mock); err != nil {
+			t.Errorf("ReadRows error: %v", err)
+			continue
+		}
+
+		if len(mock.responses) != tc.out {
+			t.Errorf("Response count: got %d, want %d", len(mock.responses), tc.out)
+			continue
+		}
 	}
 }

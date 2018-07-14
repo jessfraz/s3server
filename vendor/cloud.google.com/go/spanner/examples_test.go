@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Google Inc. All Rights Reserved.
+Copyright 2017 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package spanner_test
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/spanner"
@@ -475,8 +476,36 @@ func ExampleNewStatement() {
 
 func ExampleNewStatement_structLiteral() {
 	stmt := spanner.Statement{
-		SQL:    "SELECT FirstName, LastName FROM SINGERS WHERE LastName >= @start",
-		Params: map[string]interface{}{"start": "Dylan"},
+		SQL: `SELECT FirstName, LastName FROM SINGERS WHERE LastName = ("Lea", "Martin")`,
+	}
+	_ = stmt // TODO: Use stmt in Query.
+}
+
+func ExampleStructParam() {
+	stmt := spanner.Statement{
+		SQL: "SELECT * FROM SINGERS WHERE (FirstName, LastName) = @singerinfo",
+		Params: map[string]interface{}{
+			"singerinfo": struct {
+				FirstName string
+				LastName  string
+			}{"Bob", "Dylan"},
+		},
+	}
+	_ = stmt // TODO: Use stmt in Query.
+}
+
+func ExampleArrayOfStructParam() {
+	stmt := spanner.Statement{
+		SQL: "SELECT * FROM SINGERS WHERE (FirstName, LastName) IN UNNEST(@singerinfo)",
+		Params: map[string]interface{}{
+			"singerinfo": []struct {
+				FirstName string
+				LastName  string
+			}{
+				{"Ringo", "Starr"},
+				{"John", "Lennon"},
+			},
+		},
 	}
 	_ = stmt // TODO: Use stmt in Query.
 }
@@ -549,4 +578,91 @@ func ExampleGenericColumnValue_Decode() {
 	// Output:
 	// int 42
 	// string my-text
+}
+
+func ExampleClient_BatchReadOnlyTransaction() {
+	ctx := context.Background()
+	var (
+		client *spanner.Client
+		txn    *spanner.BatchReadOnlyTransaction
+		err    error
+	)
+	if client, err = spanner.NewClient(ctx, myDB); err != nil {
+		// TODO: Handle error.
+	}
+	defer client.Close()
+	if txn, err = client.BatchReadOnlyTransaction(ctx, spanner.StrongRead()); err != nil {
+		// TODO: Handle error.
+	}
+	defer txn.Close()
+
+	// Singer represents the elements in a row from the Singers table.
+	type Singer struct {
+		SingerID   int64
+		FirstName  string
+		LastName   string
+		SingerInfo []byte
+	}
+	stmt := spanner.Statement{SQL: "SELECT * FROM Singers;"}
+	partitions, err := txn.PartitionQuery(ctx, stmt, spanner.PartitionOptions{})
+	if err != nil {
+		// TODO: Handle error.
+	}
+	// Note: here we use multiple goroutines, but you should use separate processes/machines.
+	wg := sync.WaitGroup{}
+	for i, p := range partitions {
+		wg.Add(1)
+		go func(i int, p *spanner.Partition) {
+			defer wg.Done()
+			iter := txn.Execute(ctx, p)
+			defer iter.Stop()
+			for {
+				row, err := iter.Next()
+				if err == iterator.Done {
+					break
+				} else if err != nil {
+					// TODO: Handle error.
+				}
+				var s Singer
+				if err := row.ToStruct(&s); err != nil {
+					// TODO: Handle error.
+				}
+				_ = s // TODO: Process the row.
+			}
+		}(i, p)
+	}
+	wg.Wait()
+}
+
+func ExampleCommitTimestamp() {
+	ctx := context.Background()
+	client, err := spanner.NewClient(ctx, myDB)
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	type account struct {
+		User     string
+		Creation spanner.NullTime // time.Time can also be used if column is NOT NULL
+	}
+
+	a := account{User: "Joe", Creation: spanner.NullTime{spanner.CommitTimestamp, true}}
+	m, err := spanner.InsertStruct("Accounts", a)
+	if err != nil {
+		// TODO: Handle error.
+	}
+	_, err = client.Apply(ctx, []*spanner.Mutation{m}, spanner.ApplyAtLeastOnce())
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	if r, e := client.Single().ReadRow(ctx, "Accounts", spanner.Key{"Joe"}, []string{"User", "Creation"}); e != nil {
+		// TODO: Handle error.
+	} else {
+		var got account
+		if err := r.ToStruct(&got); err != nil {
+			// TODO: Handle error.
+		}
+		_ = got // TODO: Process row.
+	}
 }

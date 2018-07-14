@@ -1,4 +1,4 @@
-// Package dlp provides access to the DLP API.
+// Package dlp provides access to the Cloud Data Loss Prevention (DLP) API.
 //
 // See https://cloud.google.com/dlp/docs/
 //
@@ -2317,6 +2317,40 @@ func (s *GooglePrivacyDlpV2beta2AuxiliaryTable) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// GooglePrivacyDlpV2beta2BigQueryKey: Row key for identifying a record
+// in BigQuery table.
+type GooglePrivacyDlpV2beta2BigQueryKey struct {
+	// RowNumber: Absolute number of the row from the beginning of the table
+	// at the time
+	// of scanning.
+	RowNumber int64 `json:"rowNumber,omitempty,string"`
+
+	// TableReference: Complete BigQuery table reference.
+	TableReference *GooglePrivacyDlpV2beta2BigQueryTable `json:"tableReference,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "RowNumber") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "RowNumber") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GooglePrivacyDlpV2beta2BigQueryKey) MarshalJSON() ([]byte, error) {
+	type NoMethod GooglePrivacyDlpV2beta2BigQueryKey
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // GooglePrivacyDlpV2beta2BigQueryOptions: Options defining BigQuery
 // table and row identifiers.
 type GooglePrivacyDlpV2beta2BigQueryOptions struct {
@@ -2519,6 +2553,9 @@ func (s *GooglePrivacyDlpV2beta2CategoricalStatsConfig) MarshalJSON() ([]byte, e
 type GooglePrivacyDlpV2beta2CategoricalStatsHistogramBucket struct {
 	// BucketSize: Total number of values in this bucket.
 	BucketSize int64 `json:"bucketSize,omitempty,string"`
+
+	// BucketValueCount: Total number of distinct values in this bucket.
+	BucketValueCount int64 `json:"bucketValueCount,omitempty,string"`
 
 	// BucketValues: Sample of value frequencies in this bucket. The total
 	// number of
@@ -3152,6 +3189,7 @@ func (s *GooglePrivacyDlpV2beta2CryptoKey) MarshalJSON() ([]byte, error) {
 // Identifiers must be at least two characters long.
 // In the case that the identifier is the empty string, it will be
 // skipped.
+// See [Pseudonymization](/dlp/docs/pseudonymization) for example usage.
 type GooglePrivacyDlpV2beta2CryptoReplaceFfxFpeConfig struct {
 	// Possible values:
 	//   "FFX_COMMON_NATIVE_ALPHABET_UNSPECIFIED"
@@ -3401,6 +3439,106 @@ type GooglePrivacyDlpV2beta2DatastoreOptions struct {
 
 func (s *GooglePrivacyDlpV2beta2DatastoreOptions) MarshalJSON() ([]byte, error) {
 	type NoMethod GooglePrivacyDlpV2beta2DatastoreOptions
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// GooglePrivacyDlpV2beta2DateShiftConfig: Shifts dates by random number
+// of days, with option to be consistent for the
+// same context.
+type GooglePrivacyDlpV2beta2DateShiftConfig struct {
+	// Context: Points to the field that contains the context, for example,
+	// an entity id.
+	// If set, must also set method. If set, shift will be consistent for
+	// the
+	// given context.
+	Context *GooglePrivacyDlpV2beta2FieldId `json:"context,omitempty"`
+
+	// CryptoKey: Causes the shift to be computed based on this key and the
+	// context. This
+	// results in the same shift for the same context and crypto_key.
+	CryptoKey *GooglePrivacyDlpV2beta2CryptoKey `json:"cryptoKey,omitempty"`
+
+	// LowerBoundDays: For example, -5 means shift date to at most 5 days
+	// back in the past.
+	// [Required]
+	LowerBoundDays int64 `json:"lowerBoundDays,omitempty"`
+
+	// UpperBoundDays: Range of shift in days. Actual shift will be selected
+	// at random within this
+	// range (inclusive ends). Negative means shift to earlier in time. Must
+	// not
+	// be more than 365250 days (1000 years) each direction.
+	//
+	// For example, 3 means shift date to at most 3 days into the
+	// future.
+	// [Required]
+	UpperBoundDays int64 `json:"upperBoundDays,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Context") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Context") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GooglePrivacyDlpV2beta2DateShiftConfig) MarshalJSON() ([]byte, error) {
+	type NoMethod GooglePrivacyDlpV2beta2DateShiftConfig
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// GooglePrivacyDlpV2beta2DateTime: Message for a date time object.
+type GooglePrivacyDlpV2beta2DateTime struct {
+	// Date: One or more of the following must be set. All fields are
+	// optional, but
+	// when set must be valid date or time values.
+	Date *GoogleTypeDate `json:"date,omitempty"`
+
+	// Possible values:
+	//   "DAY_OF_WEEK_UNSPECIFIED" - The unspecified day-of-week.
+	//   "MONDAY" - The day-of-week of Monday.
+	//   "TUESDAY" - The day-of-week of Tuesday.
+	//   "WEDNESDAY" - The day-of-week of Wednesday.
+	//   "THURSDAY" - The day-of-week of Thursday.
+	//   "FRIDAY" - The day-of-week of Friday.
+	//   "SATURDAY" - The day-of-week of Saturday.
+	//   "SUNDAY" - The day-of-week of Sunday.
+	DayOfWeek string `json:"dayOfWeek,omitempty"`
+
+	Time *GoogleTypeTimeOfDay `json:"time,omitempty"`
+
+	TimeZone *GooglePrivacyDlpV2beta2TimeZone `json:"timeZone,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "Date") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "Date") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GooglePrivacyDlpV2beta2DateTime) MarshalJSON() ([]byte, error) {
+	type NoMethod GooglePrivacyDlpV2beta2DateTime
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -4020,6 +4158,13 @@ type GooglePrivacyDlpV2beta2Finding struct {
 	// in length, the quote may be omitted.
 	Quote string `json:"quote,omitempty"`
 
+	// QuoteInfo: Contains data parsed from quotes. Only populated if
+	// include_quote was set
+	// to true and a supported infoType was requested. Currently
+	// supported
+	// infoTypes: DATE, DATE_OF_BIRTH and TIME.
+	QuoteInfo *GooglePrivacyDlpV2beta2QuoteInfo `json:"quoteInfo,omitempty"`
+
 	// ForceSendFields is a list of field names (e.g. "CreateTime") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
@@ -4050,10 +4195,16 @@ type GooglePrivacyDlpV2beta2FindingLimits struct {
 
 	// MaxFindingsPerItem: Max number of findings that will be returned for
 	// each item scanned.
+	// When set within `InspectDataSourceRequest`,
+	// the maximum returned is 1000 regardless if this is set higher.
+	// When set within `InspectContentRequest`, this field is ignored.
 	MaxFindingsPerItem int64 `json:"maxFindingsPerItem,omitempty"`
 
-	// MaxFindingsPerRequest: Max total number of findings that will be
-	// returned per request/job.
+	// MaxFindingsPerRequest: Max number of findings that will be returned
+	// per request/job.
+	// When set within `InspectContentRequest`, the maximum returned is
+	// 1000
+	// regardless if this is set higher.
 	MaxFindingsPerRequest int64 `json:"maxFindingsPerRequest,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g.
@@ -4179,7 +4330,18 @@ type GooglePrivacyDlpV2beta2HotwordRule struct {
 
 	// Proximity: Proximity of the finding within which the entire hotword
 	// must reside.
-	// The total length of the window cannot exceed 1000 characters.
+	// The total length of the window cannot exceed 1000 characters. Note
+	// that
+	// the finding itself will be included in the window, so that hotwords
+	// may
+	// be used to match substrings of the finding itself. For example,
+	// the
+	// certainty of a phone number regex "\(\d{3}\) \d{3}-\d{4}" could
+	// be
+	// adjusted upwards if the area code is known to be the local area code
+	// of
+	// a company office using the hotword regex "\(xxx\)", where "xxx"
+	// is the area code in question.
 	Proximity *GooglePrivacyDlpV2beta2Proximity `json:"proximity,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "HotwordRegex") to
@@ -5046,6 +5208,10 @@ type GooglePrivacyDlpV2beta2KAnonymityHistogramBucket struct {
 	// BucketSize: Total number of equivalence classes in this bucket.
 	BucketSize int64 `json:"bucketSize,omitempty,string"`
 
+	// BucketValueCount: Total number of distinct equivalence classes in
+	// this bucket.
+	BucketValueCount int64 `json:"bucketValueCount,omitempty,string"`
+
 	// BucketValues: Sample of equivalence classes in this bucket. The total
 	// number of
 	// classes returned per bucket is capped at 20.
@@ -5184,6 +5350,10 @@ func (s *GooglePrivacyDlpV2beta2KMapEstimationConfig) MarshalJSON() ([]byte, err
 type GooglePrivacyDlpV2beta2KMapEstimationHistogramBucket struct {
 	// BucketSize: Number of records within these anonymity bounds.
 	BucketSize int64 `json:"bucketSize,omitempty,string"`
+
+	// BucketValueCount: Total number of distinct quasi-identifier tuple
+	// values in this bucket.
+	BucketValueCount int64 `json:"bucketValueCount,omitempty,string"`
 
 	// BucketValues: Sample of quasi-identifier tuple values in this bucket.
 	// The total
@@ -5496,6 +5666,10 @@ func (s *GooglePrivacyDlpV2beta2LDiversityEquivalenceClass) MarshalJSON() ([]byt
 type GooglePrivacyDlpV2beta2LDiversityHistogramBucket struct {
 	// BucketSize: Total number of equivalence classes in this bucket.
 	BucketSize int64 `json:"bucketSize,omitempty,string"`
+
+	// BucketValueCount: Total number of distinct equivalence classes in
+	// this bucket.
+	BucketValueCount int64 `json:"bucketValueCount,omitempty,string"`
 
 	// BucketValues: Sample of equivalence classes in this bucket. The total
 	// number of
@@ -5949,16 +6123,46 @@ func (s *GooglePrivacyDlpV2beta2NumericalStatsResult) MarshalJSON() ([]byte, err
 // GooglePrivacyDlpV2beta2OutputStorageConfig: Cloud repository for
 // storing output.
 type GooglePrivacyDlpV2beta2OutputStorageConfig struct {
-	// Table: Store findings in a new table in an existing dataset. If
-	// table_id is not
-	// set a new one will be generated for you with the following
+	// OutputSchema: Schema used for writing the findings. Columns are
+	// derived from the
+	// `Finding` object. If appending to an existing table, any columns from
+	// the
+	// predefined schema that are missing will be added. No columns in
+	// the
+	// existing table will be deleted.
+	//
+	// If unspecified, then all available columns will be used for a new
+	// table,
+	// and no changes will be made to an existing table.
+	//
+	// Possible values:
+	//   "OUTPUT_SCHEMA_UNSPECIFIED"
+	//   "BASIC_COLUMNS" - Basic schema including only `info_type`, `quote`,
+	// `certainty`, and
+	// `timestamp`.
+	//   "GCS_COLUMNS" - Schema tailored to findings from scanning Google
+	// Cloud Storage.
+	//   "DATASTORE_COLUMNS" - Schema tailored to findings from scanning
+	// Google Datastore.
+	//   "BIG_QUERY_COLUMNS" - Schema tailored to findings from scanning
+	// Google BigQuery.
+	//   "ALL_COLUMNS" - Schema containing all columns.
+	OutputSchema string `json:"outputSchema,omitempty"`
+
+	// Table: Store findings in an existing table or a new table in an
+	// existing
+	// dataset. Each column in an existing table must have the same name,
+	// type,
+	// and mode of a field in the `Finding` object. If table_id is not set a
+	// new
+	// one will be generated for you with the following
 	// format:
 	// dlp_googleapis_yyyy_mm_dd_[dlp_job_id]. Pacific timezone will be used
 	// for
 	// generating the date details.
 	Table *GooglePrivacyDlpV2beta2BigQueryTable `json:"table,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "Table") to
+	// ForceSendFields is a list of field names (e.g. "OutputSchema") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -5966,10 +6170,10 @@ type GooglePrivacyDlpV2beta2OutputStorageConfig struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Table") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
+	// NullFields is a list of field names (e.g. "OutputSchema") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
 	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
@@ -6077,6 +6281,8 @@ type GooglePrivacyDlpV2beta2PrimitiveTransformation struct {
 	CryptoHashConfig *GooglePrivacyDlpV2beta2CryptoHashConfig `json:"cryptoHashConfig,omitempty"`
 
 	CryptoReplaceFfxFpeConfig *GooglePrivacyDlpV2beta2CryptoReplaceFfxFpeConfig `json:"cryptoReplaceFfxFpeConfig,omitempty"`
+
+	DateShiftConfig *GooglePrivacyDlpV2beta2DateShiftConfig `json:"dateShiftConfig,omitempty"`
 
 	FixedSizeBucketingConfig *GooglePrivacyDlpV2beta2FixedSizeBucketingConfig `json:"fixedSizeBucketingConfig,omitempty"`
 
@@ -6248,6 +6454,34 @@ func (s *GooglePrivacyDlpV2beta2QuasiIdField) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// GooglePrivacyDlpV2beta2QuoteInfo: Message for infoType-dependent
+// details parsed from quote.
+type GooglePrivacyDlpV2beta2QuoteInfo struct {
+	DateTime *GooglePrivacyDlpV2beta2DateTime `json:"dateTime,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "DateTime") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "DateTime") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GooglePrivacyDlpV2beta2QuoteInfo) MarshalJSON() ([]byte, error) {
+	type NoMethod GooglePrivacyDlpV2beta2QuoteInfo
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // GooglePrivacyDlpV2beta2Range: Generic half-open interval [start, end)
 type GooglePrivacyDlpV2beta2Range struct {
 	// End: Index of the last character of the range (exclusive).
@@ -6312,11 +6546,13 @@ func (s *GooglePrivacyDlpV2beta2RecordCondition) MarshalJSON() ([]byte, error) {
 // GooglePrivacyDlpV2beta2RecordKey: Message for a unique key indicating
 // a record that contains a finding.
 type GooglePrivacyDlpV2beta2RecordKey struct {
+	BigQueryKey *GooglePrivacyDlpV2beta2BigQueryKey `json:"bigQueryKey,omitempty"`
+
 	CloudStorageKey *GooglePrivacyDlpV2beta2CloudStorageKey `json:"cloudStorageKey,omitempty"`
 
 	DatastoreKey *GooglePrivacyDlpV2beta2DatastoreKey `json:"datastoreKey,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "CloudStorageKey") to
+	// ForceSendFields is a list of field names (e.g. "BigQueryKey") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -6324,13 +6560,12 @@ type GooglePrivacyDlpV2beta2RecordKey struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "CloudStorageKey") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "BigQueryKey") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
 }
 
@@ -7111,6 +7346,35 @@ func (s *GooglePrivacyDlpV2beta2TimePartConfig) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+type GooglePrivacyDlpV2beta2TimeZone struct {
+	// OffsetMinutes: Set only if the offset can be determined. Positive for
+	// time ahead of UTC.
+	// E.g. For "UTC-9", this value is -540.
+	OffsetMinutes int64 `json:"offsetMinutes,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "OffsetMinutes") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "OffsetMinutes") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GooglePrivacyDlpV2beta2TimeZone) MarshalJSON() ([]byte, error) {
+	type NoMethod GooglePrivacyDlpV2beta2TimeZone
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // GooglePrivacyDlpV2beta2TimespanConfig: Configuration of the timespan
 // of the items to include in scanning.
 // Currently only supported when inspecting Google Cloud Storage and
@@ -7458,6 +7722,17 @@ type GooglePrivacyDlpV2beta2Value struct {
 
 	DateValue *GoogleTypeDate `json:"dateValue,omitempty"`
 
+	// Possible values:
+	//   "DAY_OF_WEEK_UNSPECIFIED" - The unspecified day-of-week.
+	//   "MONDAY" - The day-of-week of Monday.
+	//   "TUESDAY" - The day-of-week of Tuesday.
+	//   "WEDNESDAY" - The day-of-week of Wednesday.
+	//   "THURSDAY" - The day-of-week of Thursday.
+	//   "FRIDAY" - The day-of-week of Friday.
+	//   "SATURDAY" - The day-of-week of Saturday.
+	//   "SUNDAY" - The day-of-week of Sunday.
+	DayOfWeekValue string `json:"dayOfWeekValue,omitempty"`
+
 	FloatValue float64 `json:"floatValue,omitempty"`
 
 	IntegerValue int64 `json:"integerValue,omitempty,string"`
@@ -7726,7 +8001,9 @@ type GoogleTypeDate struct {
 	// if specifying a year/month where the day is not significant.
 	Day int64 `json:"day,omitempty"`
 
-	// Month: Month of year. Must be from 1 to 12.
+	// Month: Month of year. Must be from 1 to 12, or 0 if specifying a date
+	// without a
+	// month.
 	Month int64 `json:"month,omitempty"`
 
 	// Year: Year of date. Must be from 1 to 9999, or 0 if specifying a date

@@ -1,4 +1,6 @@
-// Package cloudkms provides access to the Google Cloud Key Management Service (KMS) API.
+// Package cloudkms provides access to the Cloud Key Management Service (KMS) API.
+//
+// This package is DEPRECATED. Use package cloud.google.com/go/kms/apiv1 instead.
 //
 // See https://cloud.google.com/kms/
 //
@@ -192,7 +194,6 @@ type ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsService struct {
 type AuditConfig struct {
 	// AuditLogConfigs: The configuration for logging of each type of
 	// permission.
-	// Next ID: 4
 	AuditLogConfigs []*AuditLogConfig `json:"auditLogConfigs,omitempty"`
 
 	// Service: Specifies a service that will be enabled for audit
@@ -303,7 +304,7 @@ type Binding struct {
 	//
 	// * `user:{emailid}`: An email address that represents a specific
 	// Google
-	//    account. For example, `alice@gmail.com` or `joe@example.com`.
+	//    account. For example, `alice@gmail.com` .
 	//
 	//
 	// * `serviceAccount:{emailid}`: An email address that represents a
@@ -325,9 +326,7 @@ type Binding struct {
 	Members []string `json:"members,omitempty"`
 
 	// Role: Role that is assigned to `members`.
-	// For example, `roles/viewer`, `roles/editor`, or
-	// `roles/owner`.
-	// Required
+	// For example, `roles/viewer`, `roles/editor`, or `roles/owner`.
 	Role string `json:"role,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Members") to
@@ -394,6 +393,7 @@ type CryptoKey struct {
 	// The CryptoKey's primary version can be updated
 	// via
 	// UpdateCryptoKeyPrimaryVersion.
+	//
 	Primary *CryptoKeyVersion `json:"primary,omitempty"`
 
 	// Purpose: The immutable purpose of this CryptoKey. Currently, the only
@@ -881,6 +881,11 @@ func (s *ListLocationsResponse) MarshalJSON() ([]byte, error) {
 
 // Location: A resource that represents Google Cloud Platform location.
 type Location struct {
+	// DisplayName: The friendly name for this location, typically a nearby
+	// city name.
+	// For example, "Tokyo".
+	DisplayName string `json:"displayName,omitempty"`
+
 	// Labels: Cross-service attributes for the location. For example
 	//
 	//     {"cloud.googleapis.com/region": "us-east1"}
@@ -904,7 +909,7 @@ type Location struct {
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "Labels") to
+	// ForceSendFields is a list of field names (e.g. "DisplayName") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -912,10 +917,10 @@ type Location struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Labels") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
+	// NullFields is a list of field names (e.g. "DisplayName") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
 	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
@@ -932,7 +937,7 @@ func (s *Location) MarshalJSON() ([]byte, error) {
 // specify access control policies for Cloud Platform resources.
 //
 //
-// A `Policy` consists of a list of `bindings`. A `Binding` binds a list
+// A `Policy` consists of a list of `bindings`. A `binding` binds a list
 // of
 // `members` to a `role`, where the members can be user accounts, Google
 // groups,
@@ -940,7 +945,7 @@ func (s *Location) MarshalJSON() ([]byte, error) {
 // permissions
 // defined by IAM.
 //
-// **Example**
+// **JSON Example**
 //
 //     {
 //       "bindings": [
@@ -951,7 +956,7 @@ func (s *Location) MarshalJSON() ([]byte, error) {
 //             "group:admins@example.com",
 //             "domain:google.com",
 //
-// "serviceAccount:my-other-app@appspot.gserviceaccount.com",
+// "serviceAccount:my-other-app@appspot.gserviceaccount.com"
 //           ]
 //         },
 //         {
@@ -960,6 +965,20 @@ func (s *Location) MarshalJSON() ([]byte, error) {
 //         }
 //       ]
 //     }
+//
+// **YAML Example**
+//
+//     bindings:
+//     - members:
+//       - user:mike@example.com
+//       - group:admins@example.com
+//       - domain:google.com
+//       - serviceAccount:my-other-app@appspot.gserviceaccount.com
+//       role: roles/owner
+//     - members:
+//       - user:sean@example.com
+//       role: roles/viewer
+//
 //
 // For a description of IAM and its features, see the
 // [IAM developer's guide](https://cloud.google.com/iam/docs).
@@ -1181,7 +1200,7 @@ type ProjectsLocationsGetCall struct {
 	header_      http.Header
 }
 
-// Get: Get information about a location.
+// Get: Gets information about a location.
 func (r *ProjectsLocationsService) Get(name string) *ProjectsLocationsGetCall {
 	c := &ProjectsLocationsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -1282,7 +1301,7 @@ func (c *ProjectsLocationsGetCall) Do(opts ...googleapi.CallOption) (*Location, 
 	}
 	return ret, nil
 	// {
-	//   "description": "Get information about a location.",
+	//   "description": "Gets information about a location.",
 	//   "flatPath": "v1/projects/{projectsId}/locations/{locationsId}",
 	//   "httpMethod": "GET",
 	//   "id": "cloudkms.projects.locations.get",
@@ -3748,7 +3767,7 @@ type ProjectsLocationsKeyRingsCryptoKeysUpdatePrimaryVersionCall struct {
 }
 
 // UpdatePrimaryVersion: Update the version of a CryptoKey that will be
-// used in Encrypt
+// used in Encrypt.
 func (r *ProjectsLocationsKeyRingsCryptoKeysService) UpdatePrimaryVersion(name string, updatecryptokeyprimaryversionrequest *UpdateCryptoKeyPrimaryVersionRequest) *ProjectsLocationsKeyRingsCryptoKeysUpdatePrimaryVersionCall {
 	c := &ProjectsLocationsKeyRingsCryptoKeysUpdatePrimaryVersionCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -3842,7 +3861,7 @@ func (c *ProjectsLocationsKeyRingsCryptoKeysUpdatePrimaryVersionCall) Do(opts ..
 	}
 	return ret, nil
 	// {
-	//   "description": "Update the version of a CryptoKey that will be used in Encrypt",
+	//   "description": "Update the version of a CryptoKey that will be used in Encrypt.",
 	//   "flatPath": "v1/projects/{projectsId}/locations/{locationsId}/keyRings/{keyRingsId}/cryptoKeys/{cryptoKeysId}:updatePrimaryVersion",
 	//   "httpMethod": "POST",
 	//   "id": "cloudkms.projects.locations.keyRings.cryptoKeys.updatePrimaryVersion",
@@ -4658,7 +4677,7 @@ type ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsRestoreCall struct {
 
 // Restore: Restore a CryptoKeyVersion in
 // the
-// DESTROY_SCHEDULED,
+// DESTROY_SCHEDULED
 // state.
 //
 // Upon restoration of the CryptoKeyVersion, state
@@ -4757,7 +4776,7 @@ func (c *ProjectsLocationsKeyRingsCryptoKeysCryptoKeyVersionsRestoreCall) Do(opt
 	}
 	return ret, nil
 	// {
-	//   "description": "Restore a CryptoKeyVersion in the\nDESTROY_SCHEDULED,\nstate.\n\nUpon restoration of the CryptoKeyVersion, state\nwill be set to DISABLED,\nand destroy_time will be cleared.",
+	//   "description": "Restore a CryptoKeyVersion in the\nDESTROY_SCHEDULED\nstate.\n\nUpon restoration of the CryptoKeyVersion, state\nwill be set to DISABLED,\nand destroy_time will be cleared.",
 	//   "flatPath": "v1/projects/{projectsId}/locations/{locationsId}/keyRings/{keyRingsId}/cryptoKeys/{cryptoKeysId}/cryptoKeyVersions/{cryptoKeyVersionsId}:restore",
 	//   "httpMethod": "POST",
 	//   "id": "cloudkms.projects.locations.keyRings.cryptoKeys.cryptoKeyVersions.restore",

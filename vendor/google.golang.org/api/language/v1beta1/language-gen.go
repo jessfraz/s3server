@@ -1,4 +1,6 @@
-// Package language provides access to the Google Cloud Natural Language API.
+// Package language provides access to the Cloud Natural Language API.
+//
+// This package is DEPRECATED. Use package cloud.google.com/go/language/apiv1 instead.
 //
 // See https://cloud.google.com/natural-language/
 //
@@ -621,6 +623,7 @@ func (s *DependencyEdge) MarshalJSON() ([]byte, error) {
 // Represents the input to API methods.
 type Document struct {
 	// Content: The content of the input in string format.
+	// Cloud audit logging exempt since it is based on user data.
 	Content string `json:"content,omitempty"`
 
 	// GcsContentUri: The Google Cloud Storage URI where the file content is

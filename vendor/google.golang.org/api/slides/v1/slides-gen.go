@@ -483,11 +483,13 @@ type CreateImageRequest struct {
 	// for
 	// display inside the presentation. Images must be less than 50MB in
 	// size,
-	// cannot exceed 25 megapixels, and must be in either in PNG, JPEG, or
+	// cannot exceed 25 megapixels, and must be in one of PNG, JPEG, or
 	// GIF
 	// format.
 	//
-	// The provided URL can be at most 2 kB in length.
+	// The provided URL can be at most 2 kB in length. The URL itself is
+	// saved
+	// with the image, and exposed via the Image.source_url field.
 	Url string `json:"url,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ElementProperties")
@@ -1136,7 +1138,7 @@ func (s *CreateShapeResponse) MarshalJSON() ([]byte, error) {
 //
 // NOTE: Chart creation requires at least one of the
 // spreadsheets.readonly,
-// spreadsheets, drive.readonly, or drive OAuth scopes.
+// spreadsheets, drive.readonly, drive.file, or drive OAuth scopes.
 type CreateSheetsChartRequest struct {
 	// ChartId: The ID of the specific chart in the Google Sheets
 	// spreadsheet.
@@ -1419,6 +1421,11 @@ func (s *CreateTableResponse) MarshalJSON() ([]byte, error) {
 }
 
 // CreateVideoRequest: Creates a video.
+//
+// NOTE: Creating a video from Google Drive requires that the requesting
+// app
+// have at least one of the drive, drive.readonly, or drive.file OAuth
+// scopes.
 type CreateVideoRequest struct {
 	// ElementProperties: The element properties for the video.
 	//
@@ -1438,7 +1445,11 @@ type CreateVideoRequest struct {
 	//
 	// e.g. For YouTube video
 	// https://www.youtube.com/watch?v=7U3axjORYZ0,
-	// the ID is 7U3axjORYZ0.
+	// the ID is 7U3axjORYZ0. For a Google Drive
+	// video
+	// https://drive.google.com/file/d/1xCgQLFTJi5_Xl8DgW_lcUYq5e-q6Hi5
+	// Q the ID
+	// is 1xCgQLFTJi5_Xl8DgW_lcUYq5e-q6Hi5Q.
 	Id string `json:"id,omitempty"`
 
 	// ObjectId: A user-supplied object ID.
@@ -1461,6 +1472,7 @@ type CreateVideoRequest struct {
 	// Possible values:
 	//   "SOURCE_UNSPECIFIED" - The video source is unspecified.
 	//   "YOUTUBE" - The video source is YouTube.
+	//   "DRIVE" - The video source is Google Drive.
 	Source string `json:"source,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "ElementProperties")
@@ -2543,7 +2555,8 @@ func (s *LayoutReference) MarshalJSON() ([]byte, error) {
 }
 
 // Line: A PageElement kind representing a
-// line, curved connector, or bent connector.
+// non-connector line, straight connector, curved connector, or bent
+// connector.
 type Line struct {
 	// LineProperties: The properties of the line.
 	LineProperties *LineProperties `json:"lineProperties,omitempty"`
@@ -2579,6 +2592,9 @@ type Line struct {
 	//   "CURVED_CONNECTOR_5" - Curved connector 5 form. Corresponds to
 	// ECMA-376 ST_ShapeType
 	// 'curvedConnector5'.
+	//   "STRAIGHT_LINE" - Straight line. Corresponds to ECMA-376
+	// ST_ShapeType 'line'. This line
+	// type is not a connector.
 	LineType string `json:"lineType,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "LineProperties") to
@@ -3619,7 +3635,7 @@ type ParagraphStyle struct {
 	// inherited from the parent.
 	SpaceAbove *Dimension `json:"spaceAbove,omitempty"`
 
-	// SpaceBelow: The amount of extra space above the paragraph. If unset,
+	// SpaceBelow: The amount of extra space below the paragraph. If unset,
 	// the value is
 	// inherited from the parent.
 	SpaceBelow *Dimension `json:"spaceBelow,omitempty"`
@@ -4049,6 +4065,10 @@ func (s *RefreshSheetsChartRequest) MarshalJSON() ([]byte, error) {
 
 // ReplaceAllShapesWithImageRequest: Replaces all shapes that match the
 // given criteria with the provided image.
+//
+// The images replacing the shapes are rectangular after being inserted
+// into
+// the presentation and do not take on the forms of the shapes.
 type ReplaceAllShapesWithImageRequest struct {
 	// ContainsText: If set, this request will replace all of the shapes
 	// that contain the
@@ -4092,11 +4112,13 @@ type ReplaceAllShapesWithImageRequest struct {
 	// for
 	// display inside the presentation. Images must be less than 50MB in
 	// size,
-	// cannot exceed 25 megapixels, and must be in either in PNG, JPEG, or
+	// cannot exceed 25 megapixels, and must be in one of PNG, JPEG, or
 	// GIF
 	// format.
 	//
-	// The provided URL can be at most 2 kB in length.
+	// The provided URL can be at most 2 kB in length. The URL itself is
+	// saved
+	// with the image, and exposed via the Image.source_url field.
 	ImageUrl string `json:"imageUrl,omitempty"`
 
 	// PageObjectIds: If non-empty, limits the matches to page elements only
@@ -4355,6 +4377,72 @@ func (s *ReplaceAllTextResponse) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// ReplaceImageRequest: Replaces an existing image with a new
+// image.
+//
+// Replacing an image removes some image effects from the existing
+// image.
+type ReplaceImageRequest struct {
+	// ImageObjectId: The ID of the existing image that will be replaced.
+	ImageObjectId string `json:"imageObjectId,omitempty"`
+
+	// ImageReplaceMethod: The replacement method.
+	//
+	// Possible values:
+	//   "IMAGE_REPLACE_METHOD_UNSPECIFIED" - Unspecified image replace
+	// method. This value must not be used.
+	//   "CENTER_INSIDE" - Scales and centers the image to fit within the
+	// bounds of the original
+	// shape and maintains the image's aspect ratio. The rendered size of
+	// the
+	// image may be smaller than the size of the shape. This is the
+	// default
+	// method when one is not specified.
+	//   "CENTER_CROP" - Scales and centers the image to fill the bounds of
+	// the original shape.
+	// The image may be cropped in order to fill the shape. The rendered
+	// size of
+	// the image will be the same as that of the original shape.
+	ImageReplaceMethod string `json:"imageReplaceMethod,omitempty"`
+
+	// Url: The URL of the new image.
+	//
+	// The image is fetched once at insertion time and a copy is stored
+	// for
+	// display inside the presentation. Images must be less than 50MB in
+	// size,
+	// cannot exceed 25 megapixels, and must be in one of PNG, JPEG, or
+	// GIF
+	// format.
+	//
+	// The provided URL can be at most 2 kB in length. The URL itself is
+	// saved
+	// with the image, and exposed via the Image.source_url field.
+	Url string `json:"url,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "ImageObjectId") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "ImageObjectId") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *ReplaceImageRequest) MarshalJSON() ([]byte, error) {
+	type NoMethod ReplaceImageRequest
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // Request: A single kind of update to apply to a presentation.
 type Request struct {
 	// CreateImage: Creates an image.
@@ -4427,6 +4515,9 @@ type Request struct {
 
 	// ReplaceAllText: Replaces all instances of specified text.
 	ReplaceAllText *ReplaceAllTextRequest `json:"replaceAllText,omitempty"`
+
+	// ReplaceImage: Replaces an existing image with a new image.
+	ReplaceImage *ReplaceImageRequest `json:"replaceImage,omitempty"`
 
 	// UngroupObjects: Ungroups objects, such as groups.
 	UngroupObjects *UngroupObjectsRequest `json:"ungroupObjects,omitempty"`
@@ -5390,11 +5481,13 @@ func (s *Size) MarshalJSON() ([]byte, error) {
 // relevant for pages with page_type SLIDE.
 type SlideProperties struct {
 	// LayoutObjectId: The object ID of the layout that this slide is based
-	// on.
+	// on. This property is
+	// read-only.
 	LayoutObjectId string `json:"layoutObjectId,omitempty"`
 
 	// MasterObjectId: The object ID of the master that this slide is based
-	// on.
+	// on. This property is
+	// read-only.
 	MasterObjectId string `json:"masterObjectId,omitempty"`
 
 	// NotesPage: The notes page that this slide is associated with. It
@@ -5410,7 +5503,7 @@ type SlideProperties struct {
 	// speakerNotesObjectId field.
 	// The notes page is read-only except for the text content and styles of
 	// the
-	// speaker notes shape.
+	// speaker notes shape. This property is read-only.
 	NotesPage *Page `json:"notesPage,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "LayoutObjectId") to
@@ -5517,7 +5610,7 @@ type StretchedPictureFill struct {
 	// for
 	// display inside the presentation. Pictures must be less than 50MB in
 	// size,
-	// cannot exceed 25 megapixels, and must be in either in PNG, JPEG, or
+	// cannot exceed 25 megapixels, and must be in one of PNG, JPEG, or
 	// GIF
 	// format.
 	//
@@ -6023,14 +6116,14 @@ func (s *TableColumnProperties) MarshalJSON() ([]byte, error) {
 // like this:
 //
 //
-//   [             ]
+//      [             ]
 //
 // A table range with location = (0, 0), row span = 3 and column span =
 // 2
 // specifies the following cells:
 //
-//    x     x
-//   [      x      ]
+//       x     x
+//      [      x      ]
 type TableRange struct {
 	// ColumnSpan: The column span of the table range.
 	ColumnSpan int64 `json:"columnSpan,omitempty"`
@@ -7413,11 +7506,12 @@ type Video struct {
 	// Possible values:
 	//   "SOURCE_UNSPECIFIED" - The video source is unspecified.
 	//   "YOUTUBE" - The video source is YouTube.
+	//   "DRIVE" - The video source is Google Drive.
 	Source string `json:"source,omitempty"`
 
-	// Url: An URL to a video. The URL is valid as long as the source
-	// video
-	// exists and sharing settings do not change.
+	// Url: An URL to a video. The URL is valid as long as the source video
+	// exists and
+	// sharing settings do not change.
 	Url string `json:"url,omitempty"`
 
 	// VideoProperties: The properties of the video.
@@ -7448,12 +7542,40 @@ func (s *Video) MarshalJSON() ([]byte, error) {
 
 // VideoProperties: The properties of the Video.
 type VideoProperties struct {
+	// AutoPlay: Whether to enable video autoplay when the page is displayed
+	// in present
+	// mode. Defaults to false.
+	AutoPlay bool `json:"autoPlay,omitempty"`
+
+	// End: The time at which to end playback, measured in seconds from the
+	// beginning
+	// of the video.
+	// If set, the end time should be after the start time.
+	// If not set or if you set this to a value that exceeds the video's
+	// length,
+	// the video will be played until its end.
+	End int64 `json:"end,omitempty"`
+
+	// Mute: Whether to mute the audio during video playback. Defaults to
+	// false.
+	Mute bool `json:"mute,omitempty"`
+
 	// Outline: The outline of the video. The default outline matches the
 	// defaults for new
 	// videos created in the Slides editor.
 	Outline *Outline `json:"outline,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "Outline") to
+	// Start: The time at which to start playback, measured in seconds from
+	// the beginning
+	// of the video.
+	// If set, the start time should be before the end time.
+	// If you set this to a value that exceeds the video's length in
+	// seconds, the
+	// video will be played from the last second.
+	// If not set, the video will be played from the beginning.
+	Start int64 `json:"start,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "AutoPlay") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -7461,7 +7583,7 @@ type VideoProperties struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Outline") to include in
+	// NullFields is a list of field names (e.g. "AutoPlay") to include in
 	// API requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
@@ -7769,8 +7891,10 @@ type PresentationsCreateCall struct {
 }
 
 // Create: Creates a new presentation using the title given in the
-// request. Other
-// fields in the request are ignored.
+// request. If a
+// presentationId is provided, uses it as the ID of the new
+// presentation.
+// Otherwise, a new presentationId is generated.
 // Returns the created presentation.
 func (r *PresentationsService) Create(presentation *Presentation) *PresentationsCreateCall {
 	c := &PresentationsCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
@@ -7861,7 +7985,7 @@ func (c *PresentationsCreateCall) Do(opts ...googleapi.CallOption) (*Presentatio
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates a new presentation using the title given in the request. Other\nfields in the request are ignored.\nReturns the created presentation.",
+	//   "description": "Creates a new presentation using the title given in the request. If a\npresentationId is provided, uses it as the ID of the new presentation.\nOtherwise, a new presentationId is generated.\nReturns the created presentation.",
 	//   "flatPath": "v1/presentations",
 	//   "httpMethod": "POST",
 	//   "id": "slides.presentations.create",

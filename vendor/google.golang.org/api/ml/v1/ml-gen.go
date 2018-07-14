@@ -1,4 +1,4 @@
-// Package ml provides access to the Google Cloud Machine Learning Engine.
+// Package ml provides access to the Cloud Machine Learning Engine.
 //
 // See https://cloud.google.com/ml/
 //
@@ -282,15 +282,13 @@ func (s *GoogleCloudMlV1HyperparameterOutputHyperparameterMetric) UnmarshalJSON(
 type GoogleCloudMlV1__AutoScaling struct {
 	// MinNodes: Optional. The minimum number of nodes to allocate for this
 	// model. These
-	// nodes are always up, starting from the time the model is deployed, so
-	// the
-	// cost of operating this model will be at least
+	// nodes are always up, starting from the time the model is
+	// deployed.
+	// Therefore, the cost of operating this model will be at least
 	// `rate` * `min_nodes` * number of hours since last billing
 	// cycle,
-	// where `rate` is the cost per node-hour as documented
-	// in
-	// [pricing](https://cloud.google.com/ml-engine/pricing#prediction_pri
-	// cing),
+	// where `rate` is the cost per node-hour as documented in the
+	// [pricing guide](/ml-engine/docs/pricing),
 	// even if no predictions are performed. There is additional cost for
 	// each
 	// prediction performed.
@@ -308,7 +306,27 @@ type GoogleCloudMlV1__AutoScaling struct {
 	// traffic
 	// to a model stops (and after a cool-down period), nodes will be shut
 	// down
-	// and no charges will be incurred until traffic to the model resumes.
+	// and no charges will be incurred until traffic to the model
+	// resumes.
+	//
+	// You can set `min_nodes` when creating the model version, and you can
+	// also
+	// update `min_nodes` for an existing
+	// version:
+	// <pre>
+	// update_body.json:
+	// {
+	//   'autoScaling': {
+	//     'minNodes': 5
+	//   }
+	// }
+	// </pre>
+	// HTTP request:
+	// <pre>
+	// PATCH
+	// https://ml.googleapis.com/v1/{name=projects/*/models/*/versions/*}?update_mask=autoScaling.minNodes -d
+	// @./update_body.json
+	// </pre>
 	MinNodes int64 `json:"minNodes,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "MinNodes") to
@@ -347,6 +365,7 @@ type GoogleCloudMlV1__Capability struct {
 	// Default to no GPU.
 	//   "NVIDIA_TESLA_K80" - Nvidia tesla k80 GPU.
 	//   "NVIDIA_TESLA_P100" - Nvidia tesla P100 GPU.
+	//   "NVIDIA_TESLA_V100" - Nvidia tesla V100 GPU.
 	AvailableAccelerators []string `json:"availableAccelerators,omitempty"`
 
 	// Possible values:
@@ -381,9 +400,40 @@ func (s *GoogleCloudMlV1__Capability) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+type GoogleCloudMlV1__Config struct {
+	// TpuServiceAccount: The service account Cloud ML uses to run on TPU
+	// node.
+	TpuServiceAccount string `json:"tpuServiceAccount,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "TpuServiceAccount")
+	// to unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "TpuServiceAccount") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GoogleCloudMlV1__Config) MarshalJSON() ([]byte, error) {
+	type NoMethod GoogleCloudMlV1__Config
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // GoogleCloudMlV1__GetConfigResponse: Returns service account
 // information associated with a project.
 type GoogleCloudMlV1__GetConfigResponse struct {
+	Config *GoogleCloudMlV1__Config `json:"config,omitempty"`
+
 	// ServiceAccount: The service account Cloud ML uses to access resources
 	// in the project.
 	ServiceAccount string `json:"serviceAccount,omitempty"`
@@ -395,7 +445,7 @@ type GoogleCloudMlV1__GetConfigResponse struct {
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "ServiceAccount") to
+	// ForceSendFields is a list of field names (e.g. "Config") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -403,13 +453,12 @@ type GoogleCloudMlV1__GetConfigResponse struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "ServiceAccount") to
-	// include in API requests with the JSON null value. By default, fields
-	// with empty values are omitted from API requests. However, any field
-	// with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "Config") to include in API
+	// requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
 }
 
@@ -470,6 +519,21 @@ func (s *GoogleCloudMlV1__HyperparameterOutput) MarshalJSON() ([]byte, error) {
 // GoogleCloudMlV1__HyperparameterSpec: Represents a set of
 // hyperparameters to optimize.
 type GoogleCloudMlV1__HyperparameterSpec struct {
+	// Algorithm: Optional. The search algorithm specified for the
+	// hyperparameter
+	// tuning job.
+	// Uses the default CloudML Engine hyperparameter tuning
+	// algorithm if unspecified.
+	//
+	// Possible values:
+	//   "ALGORITHM_UNSPECIFIED" - The default algorithm used by
+	// hyperparameter tuning service.
+	//   "GRID_SEARCH" - Simple grid search within the feasible space. To
+	// use grid search,
+	// all parameters must be `INTEGER`, `CATEGORICAL`, or `DISCRETE`.
+	//   "RANDOM_SEARCH" - Simple random search within the feasible space.
+	Algorithm string `json:"algorithm,omitempty"`
+
 	// EnableTrialEarlyStopping: Optional. Indicates if the hyperparameter
 	// tuning job enables auto trial
 	// early stopping.
@@ -531,22 +595,20 @@ type GoogleCloudMlV1__HyperparameterSpec struct {
 	// study guid and resume the study.
 	ResumePreviousJobId string `json:"resumePreviousJobId,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g.
-	// "EnableTrialEarlyStopping") to unconditionally include in API
-	// requests. By default, fields with empty values are omitted from API
-	// requests. However, any non-pointer, non-interface field appearing in
-	// ForceSendFields will be sent to the server regardless of whether the
-	// field is empty or not. This may be used to include empty fields in
-	// Patch requests.
+	// ForceSendFields is a list of field names (e.g. "Algorithm") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "EnableTrialEarlyStopping")
-	// to include in API requests with the JSON null value. By default,
-	// fields with empty values are omitted from API requests. However, any
-	// field with an empty value appearing in NullFields will be sent to the
-	// server as null. It is an error if a field in this list has a
-	// non-empty value. This may be used to include null fields in Patch
-	// requests.
+	// NullFields is a list of field names (e.g. "Algorithm") to include in
+	// API requests with the JSON null value. By default, fields with empty
+	// values are omitted from API requests. However, any field with an
+	// empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
 }
 
@@ -885,9 +947,9 @@ type GoogleCloudMlV1__Model struct {
 	// deployed.
 	// Currently only one region per model is supported.
 	// Defaults to 'us-central1' if nothing is set.
-	// See the <a href="/ml-engine/docs/regions">available regions</a>
-	// for
-	// ML Engine services.
+	// See the <a href="/ml-engine/docs/tensorflow/regions">available
+	// regions</a>
+	// for ML Engine services.
 	// Note:
 	// *   No matter where a model is deployed, it can always be accessed
 	// by
@@ -1005,7 +1067,8 @@ type GoogleCloudMlV1__ParameterSpec struct {
 	// should not contain more than 1,000 values.
 	DiscreteValues []float64 `json:"discreteValues,omitempty"`
 
-	// MaxValue: Required if typeis `DOUBLE` or `INTEGER`. This field
+	// MaxValue: Required if type is `DOUBLE` or `INTEGER`. This
+	// field
 	// should be unset if type is `CATEGORICAL`. This value should be
 	// integers if
 	// type is `INTEGER`.
@@ -1171,8 +1234,7 @@ type GoogleCloudMlV1__PredictionInput struct {
 	// model. The string must use the following
 	// format:
 	//
-	// "projects/<var>[YOUR_PROJECT]</var>/models/<var>[YOUR_MODEL]
-	// </var>"
+	// "projects/YOUR_PROJECT/models/YOUR_MODEL"
 	ModelName string `json:"modelName,omitempty"`
 
 	// OutputPath: Required. The output Google Cloud Storage location.
@@ -1180,9 +1242,9 @@ type GoogleCloudMlV1__PredictionInput struct {
 
 	// Region: Required. The Google Compute Engine region to run the
 	// prediction job in.
-	// See the <a href="/ml-engine/docs/regions">available regions</a>
-	// for
-	// ML Engine services.
+	// See the <a href="/ml-engine/docs/tensorflow/regions">available
+	// regions</a>
+	// for ML Engine services.
 	Region string `json:"region,omitempty"`
 
 	// RuntimeVersion: Optional. The Google Cloud ML runtime version to use
@@ -1223,8 +1285,8 @@ type GoogleCloudMlV1__PredictionInput struct {
 	// of the version
 	// information:
 	//
-	// "projects/<var>[YOUR_PROJECT]</var>/models/<var>YOUR_MO
-	// DEL/versions/<var>[YOUR_VERSION]</var>"
+	// "projects/YOUR_PROJECT/models/YOUR_MODEL/versions/YOUR_
+	// VERSION"
 	VersionName string `json:"versionName,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "BatchSize") to
@@ -1315,7 +1377,8 @@ type GoogleCloudMlV1__SetDefaultVersionRequest struct {
 // configuration
 // file referenced from the --config command-line argument. For
 // details, see the guide to
-// <a href="/ml-engine/docs/training-jobs">submitting a training
+// <a href="/ml-engine/docs/tensorflow/training-jobs">submitting a
+// training
 // job</a>.
 type GoogleCloudMlV1__TrainingInput struct {
 	// Args: Optional. Command line arguments to pass to the program.
@@ -1328,7 +1391,7 @@ type GoogleCloudMlV1__TrainingInput struct {
 	// training outputs
 	// and other data needed for training. This path is passed to your
 	// TensorFlow
-	// program as the 'job_dir' command-line argument. The benefit of
+	// program as the '--job-dir' command-line argument. The benefit of
 	// specifying
 	// this field is that Cloud ML validates the path for use in training.
 	JobDir string `json:"jobDir,omitempty"`
@@ -1366,51 +1429,52 @@ type GoogleCloudMlV1__TrainingInput struct {
 	//   <dd>
 	//   A machine with roughly twice the number of cores and roughly double
 	// the
-	//   memory of <code suppresswarning="true">complex_model_s</code>.
+	//   memory of <i>complex_model_s</i>.
 	//   </dd>
 	//   <dt>complex_model_l</dt>
 	//   <dd>
 	//   A machine with roughly twice the number of cores and roughly double
 	// the
-	//   memory of <code suppresswarning="true">complex_model_m</code>.
+	//   memory of <i>complex_model_m</i>.
 	//   </dd>
 	//   <dt>standard_gpu</dt>
 	//   <dd>
-	//   A machine equivalent to <code
-	// suppresswarning="true">standard</code> that
+	//   A machine equivalent to <i>standard</i> that
 	//   also includes a single NVIDIA Tesla K80 GPU. See more about
-	//   <a href="/ml-engine/docs/how-tos/using-gpus">
-	//   using GPUs for training your model</a>.
+	//   <a href="/ml-engine/docs/tensorflow/using-gpus">using GPUs to
+	//   train your model</a>.
 	//   </dd>
 	//   <dt>complex_model_m_gpu</dt>
 	//   <dd>
-	//   A machine equivalent to
-	//   <code suppresswarning="true">complex_model_m</code> that also
-	// includes
+	//   A machine equivalent to <i>complex_model_m</i> that also includes
 	//   four NVIDIA Tesla K80 GPUs.
 	//   </dd>
 	//   <dt>complex_model_l_gpu</dt>
 	//   <dd>
-	//   A machine equivalent to
-	//   <code suppresswarning="true">complex_model_l</code> that also
-	// includes
+	//   A machine equivalent to <i>complex_model_l</i> that also includes
 	//   eight NVIDIA Tesla K80 GPUs.
 	//   </dd>
 	//   <dt>standard_p100</dt>
 	//   <dd>
-	//   A machine equivalent to <code
-	// suppresswarning="true">standard</code> that
+	//   A machine equivalent to <i>standard</i> that
 	//   also includes a single NVIDIA Tesla P100 GPU. The availability of
 	// these
-	//   GPUs is in the Beta launch stage.
+	//   GPUs is in the <i>Beta</i> launch stage.
 	//   </dd>
 	//   <dt>complex_model_m_p100</dt>
 	//   <dd>
-	//   A machine equivalent to
-	//   <code suppresswarning="true">complex_model_m</code> that also
-	// includes
+	//   A machine equivalent to <i>complex_model_m</i> that also includes
 	//   four NVIDIA Tesla P100 GPUs. The availability of these GPUs is in
-	//   the Beta launch stage.
+	//   the <i>Beta</i> launch stage.
+	//   </dd>
+	//   <dt>cloud_tpu</dt>
+	//   <dd>
+	//   A TPU VM including one Cloud TPU. The availability of Cloud TPU is
+	// in
+	//   <i>Beta</i> launch stage. See more about
+	//   <a href="/ml-engine/docs/tensorflow/using-tpus">using TPUs to
+	// train
+	//   your model</a>.
 	//   </dd>
 	// </dl>
 	//
@@ -1461,14 +1525,16 @@ type GoogleCloudMlV1__TrainingInput struct {
 
 	// Region: Required. The Google Compute Engine region to run the
 	// training job in.
-	// See the <a href="/ml-engine/docs/regions">available regions</a>
-	// for
-	// ML Engine services.
+	// See the <a href="/ml-engine/docs/tensorflow/regions">available
+	// regions</a>
+	// for ML Engine services.
 	Region string `json:"region,omitempty"`
 
 	// RuntimeVersion: Optional. The Google Cloud ML runtime version to use
 	// for training.  If not
-	// set, Google Cloud ML will choose the latest stable version.
+	// set, Google Cloud ML will choose a stable version, which is defined
+	// in the
+	// documentation of runtime version list.
 	RuntimeVersion string `json:"runtimeVersion,omitempty"`
 
 	// ScaleTier: Required. Specifies the machine types, the number of
@@ -1484,8 +1550,10 @@ type GoogleCloudMlV1__TrainingInput struct {
 	// servers.
 	//   "BASIC_GPU" - A single worker instance [with
 	// a
-	// GPU](/ml-engine/docs/how-tos/using-gpus).
-	//   "BASIC_TPU" - A single worker instance with a [Cloud TPU](/tpu)
+	// GPU](/ml-engine/docs/tensorflow/using-gpus).
+	//   "BASIC_TPU" - A single worker instance with a
+	// [Cloud TPU](/ml-engine/docs/tensorflow/using-tpus).
+	// The availability of Cloud TPU is in <i>Beta</i> launch stage.
 	//   "CUSTOM" - The CUSTOM tier is not a set tier, but rather enables
 	// you to use your
 	// own cluster specification. When you use this tier, set values
@@ -1635,8 +1703,6 @@ func (s *GoogleCloudMlV1__TrainingOutput) UnmarshalJSON(data []byte) error {
 // calling
 // [projects.models.versions.list](/ml-engine/reference/rest/v1/p
 // rojects.models.versions/list).
-//
-// LINT.IfChange
 type GoogleCloudMlV1__Version struct {
 	// AutoScaling: Automatically scale the number of nodes used to serve
 	// the model in
@@ -1651,9 +1717,9 @@ type GoogleCloudMlV1__Version struct {
 	// DeploymentUri: Required. The Google Cloud Storage location of the
 	// trained model used to
 	// create the version. See the
-	// [overview of
+	// [guide to
 	// model
-	// deployment](/ml-engine/docs/concepts/deployment-overview) for
+	// deployment](/ml-engine/docs/tensorflow/deploying-models) for
 	// more
 	// information.
 	//
@@ -1677,6 +1743,24 @@ type GoogleCloudMlV1__Version struct {
 	// cancellation.
 	ErrorMessage string `json:"errorMessage,omitempty"`
 
+	// Framework: Optional. The machine learning framework Cloud ML Engine
+	// uses to train
+	// this version of the model. Valid values are `TENSORFLOW`,
+	// `SCIKIT_LEARN`,
+	// and `XGBOOST`. If you do not specify a framework, Cloud ML Engine
+	// uses
+	// TensorFlow. If you choose `SCIKIT_LEARN` or `XGBOOST`, you must also
+	// set
+	// the runtime version of the model to 1.4 or greater.
+	//
+	// Possible values:
+	//   "FRAMEWORK_UNSPECIFIED" - Unspecified framework. Defaults to
+	// TensorFlow.
+	//   "TENSORFLOW" - Tensorflow framework.
+	//   "SCIKIT_LEARN" - Scikit-learn framework.
+	//   "XGBOOST" - XGBoost framework.
+	Framework string `json:"framework,omitempty"`
+
 	// IsDefault: Output only. If true, this version will be used to handle
 	// prediction
 	// requests that do not specify a version.
@@ -1690,6 +1774,22 @@ type GoogleCloudMlV1__Version struct {
 	// LastUseTime: Output only. The time the version was last used for
 	// prediction.
 	LastUseTime string `json:"lastUseTime,omitempty"`
+
+	// MachineType: Optional. The type of machine on which to serve the
+	// model. Currently only
+	// applies to online prediction service.
+	// Naming design doc for CMLE online prediction Machine
+	// Types:
+	// https://docs.google.com/document/d/1V3tko3VJ64PcpsmNxCXiPoPGccL
+	// 9_K8gX1YjC8UofzQ/edit#heading=h.7lvy6owfx4eh.
+	// The following are currently supported and will be deprecated in
+	// Beta release.
+	//   mls1-highmem-1    1 core    2 Gb RAM
+	//   mls1-highcpu-4    4 core    2 Gb RAM
+	// The following are available in Beta:
+	//   mls1-c1-m2        1 core    2 Gb RAM   Default
+	//   mls1-c4-m2        4 core    2 Gb RAM
+	MachineType string `json:"machineType,omitempty"`
 
 	// ManualScaling: Manually select the number of nodes to use for serving
 	// the
@@ -1709,6 +1809,14 @@ type GoogleCloudMlV1__Version struct {
 	//
 	// The version name must be unique within the model it is created in.
 	Name string `json:"name,omitempty"`
+
+	// PythonVersion: Optional. The version of Python used in prediction. If
+	// not set, the default
+	// version is '2.7'. Python '3.5' is available when `runtime_version` is
+	// set
+	// to '1.4' and above. Python '2.7' works with all supported runtime
+	// versions.
+	PythonVersion string `json:"pythonVersion,omitempty"`
 
 	// RuntimeVersion: Optional. The Google Cloud ML runtime version to use
 	// for this deployment.
@@ -1761,6 +1869,161 @@ func (s *GoogleCloudMlV1__Version) MarshalJSON() ([]byte, error) {
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
 
+// GoogleIamV1__AuditConfig: Specifies the audit configuration for a
+// service.
+// The configuration determines which permission types are logged, and
+// what
+// identities, if any, are exempted from logging.
+// An AuditConfig must have one or more AuditLogConfigs.
+//
+// If there are AuditConfigs for both `allServices` and a specific
+// service,
+// the union of the two AuditConfigs is used for that service: the
+// log_types
+// specified in each AuditConfig are enabled, and the exempted_members
+// in each
+// AuditLogConfig are exempted.
+//
+// Example Policy with multiple AuditConfigs:
+//
+//     {
+//       "audit_configs": [
+//         {
+//           "service": "allServices"
+//           "audit_log_configs": [
+//             {
+//               "log_type": "DATA_READ",
+//               "exempted_members": [
+//                 "user:foo@gmail.com"
+//               ]
+//             },
+//             {
+//               "log_type": "DATA_WRITE",
+//             },
+//             {
+//               "log_type": "ADMIN_READ",
+//             }
+//           ]
+//         },
+//         {
+//           "service": "fooservice.googleapis.com"
+//           "audit_log_configs": [
+//             {
+//               "log_type": "DATA_READ",
+//             },
+//             {
+//               "log_type": "DATA_WRITE",
+//               "exempted_members": [
+//                 "user:bar@gmail.com"
+//               ]
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//
+// For fooservice, this policy enables DATA_READ, DATA_WRITE and
+// ADMIN_READ
+// logging. It also exempts foo@gmail.com from DATA_READ logging,
+// and
+// bar@gmail.com from DATA_WRITE logging.
+type GoogleIamV1__AuditConfig struct {
+	// AuditLogConfigs: The configuration for logging of each type of
+	// permission.
+	AuditLogConfigs []*GoogleIamV1__AuditLogConfig `json:"auditLogConfigs,omitempty"`
+
+	// Service: Specifies a service that will be enabled for audit
+	// logging.
+	// For example, `storage.googleapis.com`,
+	// `cloudsql.googleapis.com`.
+	// `allServices` is a special value that covers all services.
+	Service string `json:"service,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "AuditLogConfigs") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "AuditLogConfigs") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GoogleIamV1__AuditConfig) MarshalJSON() ([]byte, error) {
+	type NoMethod GoogleIamV1__AuditConfig
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// GoogleIamV1__AuditLogConfig: Provides the configuration for logging a
+// type of permissions.
+// Example:
+//
+//     {
+//       "audit_log_configs": [
+//         {
+//           "log_type": "DATA_READ",
+//           "exempted_members": [
+//             "user:foo@gmail.com"
+//           ]
+//         },
+//         {
+//           "log_type": "DATA_WRITE",
+//         }
+//       ]
+//     }
+//
+// This enables 'DATA_READ' and 'DATA_WRITE' logging, while
+// exempting
+// foo@gmail.com from DATA_READ logging.
+type GoogleIamV1__AuditLogConfig struct {
+	// ExemptedMembers: Specifies the identities that do not cause logging
+	// for this type of
+	// permission.
+	// Follows the same format of Binding.members.
+	ExemptedMembers []string `json:"exemptedMembers,omitempty"`
+
+	// LogType: The log type that this config enables.
+	//
+	// Possible values:
+	//   "LOG_TYPE_UNSPECIFIED" - Default case. Should never be this.
+	//   "ADMIN_READ" - Admin reads. Example: CloudIAM getIamPolicy
+	//   "DATA_WRITE" - Data writes. Example: CloudSQL Users create
+	//   "DATA_READ" - Data reads. Example: CloudSQL Users list
+	LogType string `json:"logType,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "ExemptedMembers") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "ExemptedMembers") to
+	// include in API requests with the JSON null value. By default, fields
+	// with empty values are omitted from API requests. However, any field
+	// with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *GoogleIamV1__AuditLogConfig) MarshalJSON() ([]byte, error) {
+	type NoMethod GoogleIamV1__AuditLogConfig
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
 // GoogleIamV1__Binding: Associates `members` with a `role`.
 type GoogleIamV1__Binding struct {
 	// Members: Specifies the identities requesting access for a Cloud
@@ -1777,7 +2040,7 @@ type GoogleIamV1__Binding struct {
 	//
 	// * `user:{emailid}`: An email address that represents a specific
 	// Google
-	//    account. For example, `alice@gmail.com` or `joe@example.com`.
+	//    account. For example, `alice@gmail.com` .
 	//
 	//
 	// * `serviceAccount:{emailid}`: An email address that represents a
@@ -1832,7 +2095,7 @@ func (s *GoogleIamV1__Binding) MarshalJSON() ([]byte, error) {
 // specify access control policies for Cloud Platform resources.
 //
 //
-// A `Policy` consists of a list of `bindings`. A `Binding` binds a list
+// A `Policy` consists of a list of `bindings`. A `binding` binds a list
 // of
 // `members` to a `role`, where the members can be user accounts, Google
 // groups,
@@ -1840,7 +2103,7 @@ func (s *GoogleIamV1__Binding) MarshalJSON() ([]byte, error) {
 // permissions
 // defined by IAM.
 //
-// **Example**
+// **JSON Example**
 //
 //     {
 //       "bindings": [
@@ -1851,7 +2114,7 @@ func (s *GoogleIamV1__Binding) MarshalJSON() ([]byte, error) {
 //             "group:admins@example.com",
 //             "domain:google.com",
 //
-// "serviceAccount:my-other-app@appspot.gserviceaccount.com",
+// "serviceAccount:my-other-app@appspot.gserviceaccount.com"
 //           ]
 //         },
 //         {
@@ -1861,9 +2124,27 @@ func (s *GoogleIamV1__Binding) MarshalJSON() ([]byte, error) {
 //       ]
 //     }
 //
+// **YAML Example**
+//
+//     bindings:
+//     - members:
+//       - user:mike@example.com
+//       - group:admins@example.com
+//       - domain:google.com
+//       - serviceAccount:my-other-app@appspot.gserviceaccount.com
+//       role: roles/owner
+//     - members:
+//       - user:sean@example.com
+//       role: roles/viewer
+//
+//
 // For a description of IAM and its features, see the
 // [IAM developer's guide](https://cloud.google.com/iam/docs).
 type GoogleIamV1__Policy struct {
+	// AuditConfigs: Specifies cloud audit logging configuration for this
+	// policy.
+	AuditConfigs []*GoogleIamV1__AuditConfig `json:"auditConfigs,omitempty"`
+
 	// Bindings: Associates a list of `members` to a `role`.
 	// `bindings` with no members will result in an error.
 	Bindings []*GoogleIamV1__Binding `json:"bindings,omitempty"`
@@ -1895,7 +2176,7 @@ type GoogleIamV1__Policy struct {
 	// server.
 	googleapi.ServerResponse `json:"-"`
 
-	// ForceSendFields is a list of field names (e.g. "Bindings") to
+	// ForceSendFields is a list of field names (e.g. "AuditConfigs") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -1903,10 +2184,10 @@ type GoogleIamV1__Policy struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Bindings") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
+	// NullFields is a list of field names (e.g. "AuditConfigs") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
 	// null. It is an error if a field in this list has a non-empty value.
 	// This may be used to include null fields in Patch requests.
 	NullFields []string `json:"-"`
@@ -1928,6 +2209,15 @@ type GoogleIamV1__SetIamPolicyRequest struct {
 	// Projects)
 	// might reject them.
 	Policy *GoogleIamV1__Policy `json:"policy,omitempty"`
+
+	// UpdateMask: OPTIONAL: A FieldMask specifying which fields of the
+	// policy to modify. Only
+	// the fields in the mask will be modified. If no mask is provided,
+	// the
+	// following default mask is used:
+	// paths: "bindings, etag"
+	// This field is only used by Cloud IAM.
+	UpdateMask string `json:"updateMask,omitempty"`
 
 	// ForceSendFields is a list of field names (e.g. "Policy") to
 	// unconditionally include in API requests. By default, fields with
@@ -2284,7 +2574,7 @@ type ProjectsGetConfigCall struct {
 
 // GetConfig: Get the service account information associated with your
 // project. You need
-// this information in order to grant the service account persmissions
+// this information in order to grant the service account permissions
 // for
 // the Google Cloud Storage location where you put your model training
 // code
@@ -2390,7 +2680,7 @@ func (c *ProjectsGetConfigCall) Do(opts ...googleapi.CallOption) (*GoogleCloudMl
 	}
 	return ret, nil
 	// {
-	//   "description": "Get the service account information associated with your project. You need\nthis information in order to grant the service account persmissions for\nthe Google Cloud Storage location where you put your model training code\nfor training the model with Google Cloud Machine Learning.",
+	//   "description": "Get the service account information associated with your project. You need\nthis information in order to grant the service account permissions for\nthe Google Cloud Storage location where you put your model training code\nfor training the model with Google Cloud Machine Learning.",
 	//   "flatPath": "v1/projects/{projectsId}:getConfig",
 	//   "httpMethod": "GET",
 	//   "id": "ml.projects.getConfig",
@@ -3144,7 +3434,8 @@ func (r *ProjectsJobsService) List(parent string) *ProjectsJobsListCall {
 // <p><code>gcloud ml-engine jobs list --filter='jobId:rnn*
 // AND state:FAILED'</code>
 // <p>For more examples, see the guide to
-// <a href="/ml-engine/docs/monitor-training">monitoring jobs</a>.
+// <a href="/ml-engine/docs/tensorflow/monitor-training">monitoring
+// jobs</a>.
 func (c *ProjectsJobsListCall) Filter(filter string) *ProjectsJobsListCall {
 	c.urlParams_.Set("filter", filter)
 	return c
@@ -3277,7 +3568,7 @@ func (c *ProjectsJobsListCall) Do(opts ...googleapi.CallOption) (*GoogleCloudMlV
 	//   ],
 	//   "parameters": {
 	//     "filter": {
-	//       "description": "Optional. Specifies the subset of jobs to retrieve.\nYou can filter on the value of one or more attributes of the job object.\nFor example, retrieve jobs with a job identifier that starts with 'census':\n\u003cp\u003e\u003ccode\u003egcloud ml-engine jobs list --filter='jobId:census*'\u003c/code\u003e\n\u003cp\u003eList all failed jobs with names that start with 'rnn':\n\u003cp\u003e\u003ccode\u003egcloud ml-engine jobs list --filter='jobId:rnn*\nAND state:FAILED'\u003c/code\u003e\n\u003cp\u003eFor more examples, see the guide to\n\u003ca href=\"/ml-engine/docs/monitor-training\"\u003emonitoring jobs\u003c/a\u003e.",
+	//       "description": "Optional. Specifies the subset of jobs to retrieve.\nYou can filter on the value of one or more attributes of the job object.\nFor example, retrieve jobs with a job identifier that starts with 'census':\n\u003cp\u003e\u003ccode\u003egcloud ml-engine jobs list --filter='jobId:census*'\u003c/code\u003e\n\u003cp\u003eList all failed jobs with names that start with 'rnn':\n\u003cp\u003e\u003ccode\u003egcloud ml-engine jobs list --filter='jobId:rnn*\nAND state:FAILED'\u003c/code\u003e\n\u003cp\u003eFor more examples, see the guide to\n\u003ca href=\"/ml-engine/docs/tensorflow/monitor-training\"\u003emonitoring jobs\u003c/a\u003e.",
 	//       "location": "query",
 	//       "type": "string"
 	//     },
@@ -5839,7 +6130,9 @@ type ProjectsModelsVersionsPatchCall struct {
 
 // Patch: Updates the specified Version resource.
 //
-// Currently the only supported field to update is `description`.
+// Currently the only update-able fields are `description`
+// and
+// `autoScaling.minNodes`.
 func (r *ProjectsModelsVersionsService) Patch(name string, googlecloudmlv1__version *GoogleCloudMlV1__Version) *ProjectsModelsVersionsPatchCall {
 	c := &ProjectsModelsVersionsPatchCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.name = name
@@ -5860,7 +6153,9 @@ func (r *ProjectsModelsVersionsService) Patch(name string, googlecloudmlv1__vers
 //       "description": "foo"
 //     }
 //
-// Currently the only supported update mask is`description`.
+// Currently the only supported update mask fields are `description`
+// and
+// `autoScaling.minNodes`.
 func (c *ProjectsModelsVersionsPatchCall) UpdateMask(updateMask string) *ProjectsModelsVersionsPatchCall {
 	c.urlParams_.Set("updateMask", updateMask)
 	return c
@@ -5952,7 +6247,7 @@ func (c *ProjectsModelsVersionsPatchCall) Do(opts ...googleapi.CallOption) (*Goo
 	}
 	return ret, nil
 	// {
-	//   "description": "Updates the specified Version resource.\n\nCurrently the only supported field to update is `description`.",
+	//   "description": "Updates the specified Version resource.\n\nCurrently the only update-able fields are `description` and\n`autoScaling.minNodes`.",
 	//   "flatPath": "v1/projects/{projectsId}/models/{modelsId}/versions/{versionsId}",
 	//   "httpMethod": "PATCH",
 	//   "id": "ml.projects.models.versions.patch",
@@ -5968,7 +6263,7 @@ func (c *ProjectsModelsVersionsPatchCall) Do(opts ...googleapi.CallOption) (*Goo
 	//       "type": "string"
 	//     },
 	//     "updateMask": {
-	//       "description": "Required. Specifies the path, relative to `Version`, of the field to\nupdate. Must be present and non-empty.\n\nFor example, to change the description of a version to \"foo\", the\n`update_mask` parameter would be specified as `description`, and the\n`PATCH` request body would specify the new value, as follows:\n    {\n      \"description\": \"foo\"\n    }\n\nCurrently the only supported update mask is`description`.",
+	//       "description": "Required. Specifies the path, relative to `Version`, of the field to\nupdate. Must be present and non-empty.\n\nFor example, to change the description of a version to \"foo\", the\n`update_mask` parameter would be specified as `description`, and the\n`PATCH` request body would specify the new value, as follows:\n    {\n      \"description\": \"foo\"\n    }\n\nCurrently the only supported update mask fields are `description` and\n`autoScaling.minNodes`.",
 	//       "format": "google-fieldmask",
 	//       "location": "query",
 	//       "type": "string"

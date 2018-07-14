@@ -1,4 +1,4 @@
-// Copyright 2015 Google Inc. All Rights Reserved.
+// Copyright 2015 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,6 +47,11 @@ func setClientHeader(headers http.Header) {
 
 // Client may be used to perform BigQuery operations.
 type Client struct {
+	// Location, if set, will be used as the default location for all subsequent
+	// dataset creation and job operations. A location specified directly in one of
+	// those operations will override this value.
+	Location string
+
 	projectID string
 	bqs       *bq.Service
 }
@@ -142,7 +147,10 @@ func runWithRetry(ctx context.Context, call func() error) error {
 	})
 }
 
-// This is the correct definition of retryable according to the BigQuery team.
+// This is the correct definition of retryable according to the BigQuery team. It
+// also considers 502 ("Bad Gateway") and 503 ("Service Unavailable") errors
+// retryable; these are returned by systems between the client and the BigQuery
+// service.
 func retryableError(err error) bool {
 	e, ok := err.(*googleapi.Error)
 	if !ok {
@@ -152,5 +160,5 @@ func retryableError(err error) bool {
 	if len(e.Errors) > 0 {
 		reason = e.Errors[0].Reason
 	}
-	return reason == "backendError" || reason == "rateLimitExceeded"
+	return e.Code == http.StatusServiceUnavailable || e.Code == http.StatusBadGateway || reason == "backendError" || reason == "rateLimitExceeded"
 }

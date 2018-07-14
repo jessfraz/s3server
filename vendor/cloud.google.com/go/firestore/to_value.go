@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,17 +22,19 @@ import (
 
 	"cloud.google.com/go/internal/fields"
 	"github.com/golang/protobuf/ptypes"
+	ts "github.com/golang/protobuf/ptypes/timestamp"
 	pb "google.golang.org/genproto/googleapis/firestore/v1beta1"
 	"google.golang.org/genproto/googleapis/type/latlng"
 )
 
-var nullValue = &pb.Value{&pb.Value_NullValue{}}
+var nullValue = &pb.Value{ValueType: &pb.Value_NullValue{}}
 
 var (
-	typeOfByteSlice   = reflect.TypeOf([]byte{})
-	typeOfGoTime      = reflect.TypeOf(time.Time{})
-	typeOfLatLng      = reflect.TypeOf((*latlng.LatLng)(nil))
-	typeOfDocumentRef = reflect.TypeOf((*DocumentRef)(nil))
+	typeOfByteSlice      = reflect.TypeOf([]byte{})
+	typeOfGoTime         = reflect.TypeOf(time.Time{})
+	typeOfLatLng         = reflect.TypeOf((*latlng.LatLng)(nil))
+	typeOfDocumentRef    = reflect.TypeOf((*DocumentRef)(nil))
+	typeOfProtoTimestamp = reflect.TypeOf((*ts.Timestamp)(nil))
 )
 
 // toProtoValue converts a Go value to a Firestore Value protobuf.
@@ -57,25 +59,31 @@ func toProtoValue(v reflect.Value) (pbv *pb.Value, sawServerTimestamp bool, err 
 	}
 	switch x := vi.(type) {
 	case []byte:
-		return &pb.Value{&pb.Value_BytesValue{x}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_BytesValue{x}}, false, nil
 	case time.Time:
 		ts, err := ptypes.TimestampProto(x)
 		if err != nil {
 			return nil, false, err
 		}
-		return &pb.Value{&pb.Value_TimestampValue{ts}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_TimestampValue{ts}}, false, nil
+	case *ts.Timestamp:
+		if x == nil {
+			// gRPC doesn't like nil oneofs. Use NullValue.
+			return nullValue, false, nil
+		}
+		return &pb.Value{ValueType: &pb.Value_TimestampValue{x}}, false, nil
 	case *latlng.LatLng:
 		if x == nil {
 			// gRPC doesn't like nil oneofs. Use NullValue.
 			return nullValue, false, nil
 		}
-		return &pb.Value{&pb.Value_GeoPointValue{x}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_GeoPointValue{x}}, false, nil
 	case *DocumentRef:
 		if x == nil {
 			// gRPC doesn't like nil oneofs. Use NullValue.
 			return nullValue, false, nil
 		}
-		return &pb.Value{&pb.Value_ReferenceValue{x.Path}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_ReferenceValue{x.Path}}, false, nil
 		// Do not add bool, string, int, etc. to this switch; leave them in the
 		// reflect-based switch below. Moving them here would drop support for
 		// types whose underlying types are those primitives.
@@ -84,15 +92,15 @@ func toProtoValue(v reflect.Value) (pbv *pb.Value, sawServerTimestamp bool, err 
 	}
 	switch v.Kind() {
 	case reflect.Bool:
-		return &pb.Value{&pb.Value_BooleanValue{v.Bool()}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_BooleanValue{v.Bool()}}, false, nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return &pb.Value{&pb.Value_IntegerValue{v.Int()}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_IntegerValue{v.Int()}}, false, nil
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
-		return &pb.Value{&pb.Value_IntegerValue{int64(v.Uint())}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_IntegerValue{int64(v.Uint())}}, false, nil
 	case reflect.Float32, reflect.Float64:
-		return &pb.Value{&pb.Value_DoubleValue{v.Float()}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_DoubleValue{v.Float()}}, false, nil
 	case reflect.String:
-		return &pb.Value{&pb.Value_StringValue{v.String()}}, false, nil
+		return &pb.Value{ValueType: &pb.Value_StringValue{v.String()}}, false, nil
 	case reflect.Slice:
 		return sliceToProtoValue(v)
 	case reflect.Map:
@@ -131,7 +139,7 @@ func sliceToProtoValue(v reflect.Value) (*pb.Value, bool, error) {
 		}
 		vals[i] = val
 	}
-	return &pb.Value{&pb.Value_ArrayValue{&pb.ArrayValue{vals}}}, false, nil
+	return &pb.Value{ValueType: &pb.Value_ArrayValue{&pb.ArrayValue{Values: vals}}}, false, nil
 }
 
 func mapToProtoValue(v reflect.Value) (*pb.Value, bool, error) {
@@ -167,7 +175,7 @@ func mapToProtoValue(v reflect.Value) (*pb.Value, bool, error) {
 		// The entire map consisted of ServerTimestamp values.
 		pv = nil
 	} else {
-		pv = &pb.Value{&pb.Value_MapValue{&pb.MapValue{m}}}
+		pv = &pb.Value{ValueType: &pb.Value_MapValue{&pb.MapValue{Fields: m}}}
 	}
 	return pv, sawServerTimestamp, nil
 }
@@ -207,7 +215,7 @@ func structToProtoValue(v reflect.Value) (*pb.Value, bool, error) {
 		// The entire struct consisted of ServerTimestamp or omitempty values.
 		pv = nil
 	} else {
-		pv = &pb.Value{&pb.Value_MapValue{&pb.MapValue{m}}}
+		pv = &pb.Value{ValueType: &pb.Value_MapValue{&pb.MapValue{Fields: m}}}
 	}
 	return pv, sawServerTimestamp, nil
 }
@@ -240,7 +248,7 @@ func parseTag(t reflect.StructTag) (name string, keep bool, other interface{}, e
 // isLeafType determines whether or not a type is a 'leaf type'
 // and should not be recursed into, but considered one field.
 func isLeafType(t reflect.Type) bool {
-	return t == typeOfGoTime || t == typeOfLatLng
+	return t == typeOfGoTime || t == typeOfLatLng || t == typeOfProtoTimestamp
 }
 
 var fieldCache = fields.NewCache(parseTag, nil, isLeafType)

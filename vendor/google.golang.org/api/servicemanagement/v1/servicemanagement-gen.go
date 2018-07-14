@@ -1,4 +1,4 @@
-// Package servicemanagement provides access to the Google Service Management API.
+// Package servicemanagement provides access to the Service Management API.
 //
 // See https://cloud.google.com/service-management/
 //
@@ -331,7 +331,6 @@ func (s *Api) MarshalJSON() ([]byte, error) {
 type AuditConfig struct {
 	// AuditLogConfigs: The configuration for logging of each type of
 	// permission.
-	// Next ID: 4
 	AuditLogConfigs []*AuditLogConfig `json:"auditLogConfigs,omitempty"`
 
 	// Service: Specifies a service that will be enabled for audit
@@ -642,22 +641,9 @@ func (s *Authentication) MarshalJSON() ([]byte, error) {
 // will be
 // ignored.
 type AuthenticationRule struct {
-	// AllowWithoutCredential: Whether to allow requests without a
-	// credential. The credential can be
-	// an OAuth token, Google cookies (first-party auth) or
-	// EndUserCreds.
-	//
-	// For requests without credentials, if the service control environment
-	// is
-	// specified, each incoming request **must** be associated with a
-	// service
-	// consumer. This can be done by passing an API key that belongs to a
-	// consumer
-	// project.
+	// AllowWithoutCredential: If true, the service accepts API keys without
+	// any other credential.
 	AllowWithoutCredential bool `json:"allowWithoutCredential,omitempty"`
-
-	// CustomAuth: Configuration for custom authentication.
-	CustomAuth *CustomAuthRequirements `json:"customAuth,omitempty"`
 
 	// Oauth: The requirements for OAuth credentials.
 	Oauth *OAuthRequirements `json:"oauth,omitempty"`
@@ -925,16 +911,6 @@ func (s *BillingDestination) MarshalJSON() ([]byte, error) {
 
 // Binding: Associates `members` with a `role`.
 type Binding struct {
-	// Condition: The condition that is associated with this binding.
-	// NOTE: an unsatisfied condition will not allow user access via
-	// current
-	// binding. Different bindings, including their conditions, are
-	// examined
-	// independently.
-	// This field is only visible as GOOGLE_INTERNAL or
-	// CONDITION_TRUSTED_TESTER.
-	Condition *Expr `json:"condition,omitempty"`
-
 	// Members: Specifies the identities requesting access for a Cloud
 	// Platform resource.
 	// `members` can have the following values:
@@ -949,7 +925,7 @@ type Binding struct {
 	//
 	// * `user:{emailid}`: An email address that represents a specific
 	// Google
-	//    account. For example, `alice@gmail.com` or `joe@example.com`.
+	//    account. For example, `alice@gmail.com` .
 	//
 	//
 	// * `serviceAccount:{emailid}`: An email address that represents a
@@ -976,7 +952,7 @@ type Binding struct {
 	// Required
 	Role string `json:"role,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "Condition") to
+	// ForceSendFields is a list of field names (e.g. "Members") to
 	// unconditionally include in API requests. By default, fields with
 	// empty values are omitted from API requests. However, any non-pointer,
 	// non-interface field appearing in ForceSendFields will be sent to the
@@ -984,7 +960,7 @@ type Binding struct {
 	// used to include empty fields in Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Condition") to include in
+	// NullFields is a list of field names (e.g. "Members") to include in
 	// API requests with the JSON null value. By default, fields with empty
 	// values are omitted from API requests. However, any field with an
 	// empty value appearing in NullFields will be sent to the server as
@@ -1270,8 +1246,35 @@ func (s *ConfigSource) MarshalJSON() ([]byte, error) {
 // and
 // `google.rpc.context.OriginContext`.
 //
-// Available context types are defined in package
+// Available context types are defined in
+// package
 // `google.rpc.context`.
+//
+// This also provides mechanism to whitelist any protobuf message
+// extension that
+// can be sent in grpc metadata using
+// “x-goog-ext-<extension_id>-bin”
+// and
+// “x-goog-ext-<extension_id>-jspb” format. For example, list any
+// service
+// specific protobuf types that can appear in grpc metadata as follows
+// in your
+// yaml file:
+//
+// Example:
+//
+//     context:
+//       rules:
+//        - selector:
+// "google.example.library.v1.LibraryService.CreateBook"
+//          allowed_request_extensions:
+//          - google.foo.v1.NewExtension
+//          allowed_response_extensions:
+//          - google.foo.v1.NewExtension
+//
+// You can also specify extension ID instead of fully qualified
+// extension name
+// here.
 type Context struct {
 	// Rules: A list of RPC context rules that apply to individual API
 	// methods.
@@ -1307,6 +1310,16 @@ func (s *Context) MarshalJSON() ([]byte, error) {
 // for an individual API
 // element.
 type ContextRule struct {
+	// AllowedRequestExtensions: A list of full type names or extension IDs
+	// of extensions allowed in grpc
+	// side channel from client to backend.
+	AllowedRequestExtensions []string `json:"allowedRequestExtensions,omitempty"`
+
+	// AllowedResponseExtensions: A list of full type names or extension IDs
+	// of extensions allowed in grpc
+	// side channel from backend to client.
+	AllowedResponseExtensions []string `json:"allowedResponseExtensions,omitempty"`
+
 	// Provided: A list of full type names of provided contexts.
 	Provided []string `json:"provided,omitempty"`
 
@@ -1318,20 +1331,22 @@ type ContextRule struct {
 	// Refer to selector for syntax details.
 	Selector string `json:"selector,omitempty"`
 
-	// ForceSendFields is a list of field names (e.g. "Provided") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
+	// ForceSendFields is a list of field names (e.g.
+	// "AllowedRequestExtensions") to unconditionally include in API
+	// requests. By default, fields with empty values are omitted from API
+	// requests. However, any non-pointer, non-interface field appearing in
+	// ForceSendFields will be sent to the server regardless of whether the
+	// field is empty or not. This may be used to include empty fields in
+	// Patch requests.
 	ForceSendFields []string `json:"-"`
 
-	// NullFields is a list of field names (e.g. "Provided") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
+	// NullFields is a list of field names (e.g. "AllowedRequestExtensions")
+	// to include in API requests with the JSON null value. By default,
+	// fields with empty values are omitted from API requests. However, any
+	// field with an empty value appearing in NullFields will be sent to the
+	// server as null. It is an error if a field in this list has a
+	// non-empty value. This may be used to include null fields in Patch
+	// requests.
 	NullFields []string `json:"-"`
 }
 
@@ -1371,39 +1386,6 @@ type Control struct {
 
 func (s *Control) MarshalJSON() ([]byte, error) {
 	type NoMethod Control
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-// CustomAuthRequirements: Configuration for a custom authentication
-// provider.
-type CustomAuthRequirements struct {
-	// Provider: A configuration string containing connection information
-	// for the
-	// authentication provider, typically formatted as a SmartService
-	// string
-	// (go/smartservice).
-	Provider string `json:"provider,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Provider") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Provider") to include in
-	// API requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *CustomAuthRequirements) MarshalJSON() ([]byte, error) {
-	type NoMethod CustomAuthRequirements
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -1656,11 +1638,7 @@ func (s *DisableServiceRequest) MarshalJSON() ([]byte, error) {
 // Text can be excluded from doc using the following
 // notation:
 // <pre><code>&#40;-- internal comment --&#41;</code></pre>
-// Comments can be made conditional using a visibility label. The
-// below
-// text will be only rendered if the `BETA` label is
-// available:
-// <pre><code>&#40;--BETA: comment for BETA users --&#41;</code></pre>
+//
 // A few directives are available in documentation. Note that
 // directives must appear on a single line to be properly
 // identified. The `include` directive includes a markdown file from
@@ -2010,60 +1988,6 @@ type Experimental struct {
 
 func (s *Experimental) MarshalJSON() ([]byte, error) {
 	type NoMethod Experimental
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-// Expr: Represents an expression text. Example:
-//
-//     title: "User account presence"
-//     description: "Determines whether the request has a user account"
-//     expression: "size(request.user) > 0"
-type Expr struct {
-	// Description: An optional description of the expression. This is a
-	// longer text which
-	// describes the expression, e.g. when hovered over it in a UI.
-	Description string `json:"description,omitempty"`
-
-	// Expression: Textual representation of an expression in
-	// Common Expression Language syntax.
-	//
-	// The application context of the containing message determines
-	// which
-	// well-known feature set of CEL is supported.
-	Expression string `json:"expression,omitempty"`
-
-	// Location: An optional string indicating the location of the
-	// expression for error
-	// reporting, e.g. a file name and a position in the file.
-	Location string `json:"location,omitempty"`
-
-	// Title: An optional title for the expression, i.e. a short string
-	// describing
-	// its purpose. This can be used e.g. in UIs which allow to enter
-	// the
-	// expression.
-	Title string `json:"title,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Description") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Description") to include
-	// in API requests with the JSON null value. By default, fields with
-	// empty values are omitted from API requests. However, any field with
-	// an empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *Expr) MarshalJSON() ([]byte, error) {
-	type NoMethod Expr
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -3259,6 +3183,10 @@ type MetricDescriptor struct {
 	// for responses that failed.
 	Labels []*LabelDescriptor `json:"labels,omitempty"`
 
+	// Metadata: Optional. Metadata which can be used to guide usage of the
+	// metric.
+	Metadata *MetricDescriptorMetadata `json:"metadata,omitempty"`
+
 	// MetricKind: Whether the metric records instantaneous values, changes
 	// to a value, etc.
 	// Some combinations of `metric_kind` and `value_type` might not be
@@ -3398,6 +3326,100 @@ type MetricDescriptor struct {
 
 func (s *MetricDescriptor) MarshalJSON() ([]byte, error) {
 	type NoMethod MetricDescriptor
+	raw := NoMethod(*s)
+	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
+}
+
+// MetricDescriptorMetadata: Additional annotations that can be used to
+// guide the usage of a metric.
+type MetricDescriptorMetadata struct {
+	// IngestDelay: The delay of data points caused by ingestion. Data
+	// points older than this
+	// age are guaranteed to be ingested and available to be read,
+	// excluding
+	// data loss due to errors.
+	IngestDelay string `json:"ingestDelay,omitempty"`
+
+	// LaunchStage: The launch stage of the metric definition.
+	//
+	// Possible values:
+	//   "LAUNCH_STAGE_UNSPECIFIED" - Do not use this default value.
+	//   "EARLY_ACCESS" - Early Access features are limited to a closed
+	// group of testers. To use
+	// these features, you must sign up in advance and sign a Trusted
+	// Tester
+	// agreement (which includes confidentiality provisions). These features
+	// may
+	// be unstable, changed in backward-incompatible ways, and are
+	// not
+	// guaranteed to be released.
+	//   "ALPHA" - Alpha is a limited availability test for releases before
+	// they are cleared
+	// for widespread use. By Alpha, all significant design issues are
+	// resolved
+	// and we are in the process of verifying functionality. Alpha
+	// customers
+	// need to apply for access, agree to applicable terms, and have
+	// their
+	// projects whitelisted. Alpha releases don’t have to be feature
+	// complete,
+	// no SLAs are provided, and there are no technical support obligations,
+	// but
+	// they will be far enough along that customers can actually use them
+	// in
+	// test environments or for limited-use tests -- just like they would
+	// in
+	// normal production cases.
+	//   "BETA" - Beta is the point at which we are ready to open a release
+	// for any
+	// customer to use. There are no SLA or technical support obligations in
+	// a
+	// Beta release. Products will be complete from a feature perspective,
+	// but
+	// may have some open outstanding issues. Beta releases are suitable
+	// for
+	// limited production use cases.
+	//   "GA" - GA features are open to all developers and are considered
+	// stable and
+	// fully qualified for production use.
+	//   "DEPRECATED" - Deprecated features are scheduled to be shut down
+	// and removed. For more
+	// information, see the “Deprecation Policy” section of our [Terms
+	// of
+	// Service](https://cloud.google.com/terms/)
+	// and the [Google Cloud Platform Subject to the
+	// Deprecation
+	// Policy](https://cloud.google.com/terms/deprecation) documentation.
+	LaunchStage string `json:"launchStage,omitempty"`
+
+	// SamplePeriod: The sampling period of metric data points. For metrics
+	// which are written
+	// periodically, consecutive data points are stored at this time
+	// interval,
+	// excluding data loss due to errors. Metrics with a higher granularity
+	// have
+	// a smaller sampling period.
+	SamplePeriod string `json:"samplePeriod,omitempty"`
+
+	// ForceSendFields is a list of field names (e.g. "IngestDelay") to
+	// unconditionally include in API requests. By default, fields with
+	// empty values are omitted from API requests. However, any non-pointer,
+	// non-interface field appearing in ForceSendFields will be sent to the
+	// server regardless of whether the field is empty or not. This may be
+	// used to include empty fields in Patch requests.
+	ForceSendFields []string `json:"-"`
+
+	// NullFields is a list of field names (e.g. "IngestDelay") to include
+	// in API requests with the JSON null value. By default, fields with
+	// empty values are omitted from API requests. However, any field with
+	// an empty value appearing in NullFields will be sent to the server as
+	// null. It is an error if a field in this list has a non-empty value.
+	// This may be used to include null fields in Patch requests.
+	NullFields []string `json:"-"`
+}
+
+func (s *MetricDescriptorMetadata) MarshalJSON() ([]byte, error) {
+	type NoMethod MetricDescriptorMetadata
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -4055,7 +4077,7 @@ func (s *Page) MarshalJSON() ([]byte, error) {
 // specify access control policies for Cloud Platform resources.
 //
 //
-// A `Policy` consists of a list of `bindings`. A `Binding` binds a list
+// A `Policy` consists of a list of `bindings`. A `binding` binds a list
 // of
 // `members` to a `role`, where the members can be user accounts, Google
 // groups,
@@ -4063,7 +4085,7 @@ func (s *Page) MarshalJSON() ([]byte, error) {
 // permissions
 // defined by IAM.
 //
-// **Example**
+// **JSON Example**
 //
 //     {
 //       "bindings": [
@@ -4074,7 +4096,7 @@ func (s *Page) MarshalJSON() ([]byte, error) {
 //             "group:admins@example.com",
 //             "domain:google.com",
 //
-// "serviceAccount:my-other-app@appspot.gserviceaccount.com",
+// "serviceAccount:my-other-app@appspot.gserviceaccount.com"
 //           ]
 //         },
 //         {
@@ -4083,6 +4105,20 @@ func (s *Page) MarshalJSON() ([]byte, error) {
 //         }
 //       ]
 //     }
+//
+// **YAML Example**
+//
+//     bindings:
+//     - members:
+//       - user:mike@example.com
+//       - group:admins@example.com
+//       - domain:google.com
+//       - serviceAccount:my-other-app@appspot.gserviceaccount.com
+//       role: roles/owner
+//     - members:
+//       - user:sean@example.com
+//       role: roles/viewer
+//
 //
 // For a description of IAM and its features, see the
 // [IAM developer's guide](https://cloud.google.com/iam/docs).
@@ -4623,9 +4659,6 @@ type Service struct {
 
 	// Usage: Configuration controlling usage of this service.
 	Usage *Usage `json:"usage,omitempty"`
-
-	// Visibility: API visibility configuration.
-	Visibility *Visibility `json:"visibility,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
 	// server.
@@ -5477,119 +5510,6 @@ type UsageRule struct {
 
 func (s *UsageRule) MarshalJSON() ([]byte, error) {
 	type NoMethod UsageRule
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-// Visibility: `Visibility` defines restrictions for the visibility of
-// service
-// elements.  Restrictions are specified using visibility labels
-// (e.g., TRUSTED_TESTER) that are elsewhere linked to users and
-// projects.
-//
-// Users and projects can have access to more than one visibility label.
-// The
-// effective visibility for multiple labels is the union of each
-// label's
-// elements, plus any unrestricted elements.
-//
-// If an element and its parents have no restrictions, visibility
-// is
-// unconditionally granted.
-//
-// Example:
-//
-//     visibility:
-//       rules:
-//       - selector: google.calendar.Calendar.EnhancedSearch
-//         restriction: TRUSTED_TESTER
-//       - selector: google.calendar.Calendar.Delegate
-//         restriction: GOOGLE_INTERNAL
-//
-// Here, all methods are publicly visible except for the restricted
-// methods
-// EnhancedSearch and Delegate.
-type Visibility struct {
-	// Rules: A list of visibility rules that apply to individual API
-	// elements.
-	//
-	// **NOTE:** All service configuration rules follow "last one wins"
-	// order.
-	Rules []*VisibilityRule `json:"rules,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Rules") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Rules") to include in API
-	// requests with the JSON null value. By default, fields with empty
-	// values are omitted from API requests. However, any field with an
-	// empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *Visibility) MarshalJSON() ([]byte, error) {
-	type NoMethod Visibility
-	raw := NoMethod(*s)
-	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
-}
-
-// VisibilityRule: A visibility rule provides visibility configuration
-// for an individual API
-// element.
-type VisibilityRule struct {
-	// Restriction: A comma-separated list of visibility labels that apply
-	// to the `selector`.
-	// Any of the listed labels can be used to grant the visibility.
-	//
-	// If a rule has multiple labels, removing one of the labels but not all
-	// of
-	// them can break clients.
-	//
-	// Example:
-	//
-	//     visibility:
-	//       rules:
-	//       - selector: google.calendar.Calendar.EnhancedSearch
-	//         restriction: GOOGLE_INTERNAL, TRUSTED_TESTER
-	//
-	// Removing GOOGLE_INTERNAL from this restriction will break clients
-	// that
-	// rely on this method and only had access to it through
-	// GOOGLE_INTERNAL.
-	Restriction string `json:"restriction,omitempty"`
-
-	// Selector: Selects methods, messages, fields, enums, etc. to which
-	// this rule applies.
-	//
-	// Refer to selector for syntax details.
-	Selector string `json:"selector,omitempty"`
-
-	// ForceSendFields is a list of field names (e.g. "Restriction") to
-	// unconditionally include in API requests. By default, fields with
-	// empty values are omitted from API requests. However, any non-pointer,
-	// non-interface field appearing in ForceSendFields will be sent to the
-	// server regardless of whether the field is empty or not. This may be
-	// used to include empty fields in Patch requests.
-	ForceSendFields []string `json:"-"`
-
-	// NullFields is a list of field names (e.g. "Restriction") to include
-	// in API requests with the JSON null value. By default, fields with
-	// empty values are omitted from API requests. However, any field with
-	// an empty value appearing in NullFields will be sent to the server as
-	// null. It is an error if a field in this list has a non-empty value.
-	// This may be used to include null fields in Patch requests.
-	NullFields []string `json:"-"`
-}
-
-func (s *VisibilityRule) MarshalJSON() ([]byte, error) {
-	type NoMethod VisibilityRule
 	raw := NoMethod(*s)
 	return gensupport.MarshalJSON(raw, s.ForceSendFields, s.NullFields)
 }
@@ -7745,8 +7665,15 @@ type ServicesConfigsCreateCall struct {
 // service.
 // This method only stores the service configuration. To roll out the
 // service
-// configuration to backend systems please call
+// configuration to backend systems please
+// call
 // CreateServiceRollout.
+//
+// Only the 100 most recent service configurations and ones referenced
+// by
+// existing rollouts are kept for each service. The rest will be
+// deleted
+// eventually.
 func (r *ServicesConfigsService) Create(serviceName string, service *Service) *ServicesConfigsCreateCall {
 	c := &ServicesConfigsCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.serviceName = serviceName
@@ -7840,7 +7767,7 @@ func (c *ServicesConfigsCreateCall) Do(opts ...googleapi.CallOption) (*Service, 
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates a new service configuration (version) for a managed service.\nThis method only stores the service configuration. To roll out the service\nconfiguration to backend systems please call\nCreateServiceRollout.",
+	//   "description": "Creates a new service configuration (version) for a managed service.\nThis method only stores the service configuration. To roll out the service\nconfiguration to backend systems please call\nCreateServiceRollout.\n\nOnly the 100 most recent service configurations and ones referenced by\nexisting rollouts are kept for each service. The rest will be deleted\neventually.",
 	//   "flatPath": "v1/services/{serviceName}/configs",
 	//   "httpMethod": "POST",
 	//   "id": "servicemanagement.services.configs.create",
@@ -8254,6 +8181,12 @@ type ServicesConfigsSubmitCall struct {
 // other services,
 // please call CreateServiceRollout.
 //
+// Only the 100 most recent configuration sources and ones referenced
+// by
+// existing service configurtions are kept for each service. The rest
+// will be
+// deleted eventually.
+//
 // Operation<response: SubmitConfigSourceResponse>
 func (r *ServicesConfigsService) Submit(serviceName string, submitconfigsourcerequest *SubmitConfigSourceRequest) *ServicesConfigsSubmitCall {
 	c := &ServicesConfigsSubmitCall{s: r.s, urlParams_: make(gensupport.URLParams)}
@@ -8348,7 +8281,7 @@ func (c *ServicesConfigsSubmitCall) Do(opts ...googleapi.CallOption) (*Operation
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates a new service configuration (version) for a managed service based\non\nuser-supplied configuration source files (for example: OpenAPI\nSpecification). This method stores the source configurations as well as the\ngenerated service configuration. To rollout the service configuration to\nother services,\nplease call CreateServiceRollout.\n\nOperation\u003cresponse: SubmitConfigSourceResponse\u003e",
+	//   "description": "Creates a new service configuration (version) for a managed service based\non\nuser-supplied configuration source files (for example: OpenAPI\nSpecification). This method stores the source configurations as well as the\ngenerated service configuration. To rollout the service configuration to\nother services,\nplease call CreateServiceRollout.\n\nOnly the 100 most recent configuration sources and ones referenced by\nexisting service configurtions are kept for each service. The rest will be\ndeleted eventually.\n\nOperation\u003cresponse: SubmitConfigSourceResponse\u003e",
 	//   "flatPath": "v1/services/{serviceName}/configs:submit",
 	//   "httpMethod": "POST",
 	//   "id": "servicemanagement.services.configs.submit",
@@ -8830,6 +8763,12 @@ type ServicesRolloutsCreateCall struct {
 // will
 // not be blocked by previous Rollouts.
 //
+// Only the 100 most recent (in any state) and the last 10 successful
+// (if not
+// already part of the set of 100 most recent) rollouts are kept for
+// each
+// service. The rest will be deleted eventually.
+//
 // Operation<response: Rollout>
 func (r *ServicesRolloutsService) Create(serviceName string, rollout *Rollout) *ServicesRolloutsCreateCall {
 	c := &ServicesRolloutsCreateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
@@ -8924,7 +8863,7 @@ func (c *ServicesRolloutsCreateCall) Do(opts ...googleapi.CallOption) (*Operatio
 	}
 	return ret, nil
 	// {
-	//   "description": "Creates a new service configuration rollout. Based on rollout, the\nGoogle Service Management will roll out the service configurations to\ndifferent backend services. For example, the logging configuration will be\npushed to Google Cloud Logging.\n\nPlease note that any previous pending and running Rollouts and associated\nOperations will be automatically cancelled so that the latest Rollout will\nnot be blocked by previous Rollouts.\n\nOperation\u003cresponse: Rollout\u003e",
+	//   "description": "Creates a new service configuration rollout. Based on rollout, the\nGoogle Service Management will roll out the service configurations to\ndifferent backend services. For example, the logging configuration will be\npushed to Google Cloud Logging.\n\nPlease note that any previous pending and running Rollouts and associated\nOperations will be automatically cancelled so that the latest Rollout will\nnot be blocked by previous Rollouts.\n\nOnly the 100 most recent (in any state) and the last 10 successful (if not\nalready part of the set of 100 most recent) rollouts are kept for each\nservice. The rest will be deleted eventually.\n\nOperation\u003cresponse: Rollout\u003e",
 	//   "flatPath": "v1/services/{serviceName}/rollouts",
 	//   "httpMethod": "POST",
 	//   "id": "servicemanagement.services.rollouts.create",

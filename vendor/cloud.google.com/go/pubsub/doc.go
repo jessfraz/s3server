@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ messages, hiding the the details of the underlying server RPCs.  Google Cloud
 Pub/Sub is a many-to-many, asynchronous messaging system that decouples senders
 and receivers.
 
-Note: This package is in beta. Some backwards-incompatible changes may occur.
-
 More information about Google Cloud Pub/Sub is available at
 https://cloud.google.com/pubsub/docs
+
+See https://godoc.org/cloud.google.com/go for authentication, timeouts,
+connection pooling and similar aspects of this package.
+
 
 Publishing
 
@@ -112,9 +114,10 @@ increases the available time for client code to process messages. However, if
 the client code neglects to call Message.Ack/Nack, a large MaxExtension will
 increase the delay before the message is redelivered.
 
-Authentication
+Slow Message Processing
 
-See examples of authorization and authentication at
-https://godoc.org/cloud.google.com/go#pkg-examples.
+For use cases where message processing exceeds 30 minutes, we recommend using
+the base client in a pull model, since long-lived streams are periodically killed
+by firewalls. See the example at https://godoc.org/cloud.google.com/go/pubsub/apiv1#example-SubscriberClient-Pull-LengthyClientProcessing
 */
 package pubsub // import "cloud.google.com/go/pubsub"

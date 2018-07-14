@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -218,7 +218,7 @@ func ExampleNewQuery() {
 }
 
 func ExampleNewQuery_options() {
-	// Query to order the posts by the number of comments they have recieved.
+	// Query to order the posts by the number of comments they have received.
 	q := datastore.NewQuery("Post").Order("-Comments")
 	// Start listing from an offset and limit the results.
 	q = q.Offset(20).Limit(10)
@@ -393,6 +393,28 @@ func ExampleClient_GetAll() {
 	for i, key := range keys {
 		fmt.Println(key)
 		fmt.Println(posts[i])
+	}
+}
+
+func ExampleClient_Mutate() {
+	ctx := context.Background()
+	client, err := datastore.NewClient(ctx, "project-id")
+	if err != nil {
+		// TODO: Handle error.
+	}
+
+	key1 := datastore.NameKey("Post", "post1", nil)
+	key2 := datastore.NameKey("Post", "post2", nil)
+	key3 := datastore.NameKey("Post", "post3", nil)
+	key4 := datastore.NameKey("Post", "post4", nil)
+
+	_, err = client.Mutate(ctx,
+		datastore.NewInsert(key1, Post{Title: "Post 1"}),
+		datastore.NewUpsert(key2, Post{Title: "Post 2"}),
+		datastore.NewUpdate(key3, Post{Title: "Post 3"}),
+		datastore.NewDelete(key4))
+	if err != nil {
+		// TODO: Handle error.
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,18 +30,21 @@ import (
 	"google.golang.org/api/option"
 )
 
-const timeout = time.Minute * 10
-const ackDeadline = time.Second * 10
-
-const nMessages = 1e4
+const (
+	timeout                 = time.Minute * 10
+	ackDeadline             = time.Second * 10
+	nMessages               = 1e4
+	acceptableDupPercentage = .05
+	numAcceptableDups       = int(nMessages * acceptableDupPercentage / 100)
+)
 
 // Buffer log messages to debug failures.
 var logBuf bytes.Buffer
 
-// TestEndToEnd pumps many messages into a topic and tests that they are all
+// The end-to-end pumps many messages into a topic and tests that they are all
 // delivered to each subscription for the topic. It also tests that messages
 // are not unexpectedly redelivered.
-func TestEndToEnd(t *testing.T) {
+func TestIntegration_EndToEnd(t *testing.T) {
 	t.Parallel()
 	if testing.Short() {
 		t.Skip("Integration tests skipped in short mode")
@@ -81,14 +84,10 @@ func TestEndToEnd(t *testing.T) {
 		defer subs[i].Delete(ctx)
 	}
 
-	ids, err := publish(ctx, topic, nMessages)
+	err = publish(ctx, topic, nMessages)
 	topic.Stop()
 	if err != nil {
 		t.Fatalf("publish: %v", err)
-	}
-	wantCounts := make(map[string]int)
-	for _, id := range ids {
-		wantCounts[id] = 1
 	}
 
 	// recv provides an indication that messages are still arriving.
@@ -146,8 +145,20 @@ loop:
 	wg.Wait()
 	ok := true
 	for i, con := range consumers {
-		if got, want := con.counts, wantCounts; !testutil.Equal(got, want) {
-			t.Errorf("%d: message counts: %v\n", i, diff(got, want))
+		var numDups int
+		var zeroes int
+		for _, v := range con.counts {
+			if v == 0 {
+				zeroes += 1
+			}
+			numDups += v - 1
+		}
+
+		if zeroes > 0 {
+			t.Errorf("Consumer %d: %d messages never arrived", i, zeroes)
+			ok = false
+		} else if numDups > numAcceptableDups {
+			t.Errorf("Consumer %d: Willing to accept %d dups (%f%% duplicated of %d messages), but got %d", i, numAcceptableDups, acceptableDupPercentage, int(nMessages), numDups)
 			ok = false
 		}
 	}
@@ -157,7 +168,7 @@ loop:
 }
 
 // publish publishes n messages to topic, and returns the published message IDs.
-func publish(ctx context.Context, topic *Topic, n int) ([]string, error) {
+func publish(ctx context.Context, topic *Topic, n int) error {
 	var rs []*PublishResult
 	for i := 0; i < n; i++ {
 		m := &Message{Data: []byte(fmt.Sprintf("msg %d", i))}
@@ -167,11 +178,11 @@ func publish(ctx context.Context, topic *Topic, n int) ([]string, error) {
 	for _, r := range rs {
 		id, err := r.Get(ctx)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		ids = append(ids, id)
 	}
-	return ids, nil
+	return nil
 }
 
 // consumer consumes messages according to its configuration.
@@ -192,7 +203,7 @@ func (c *consumer) consume(t *testing.T, ctx context.Context, sub *Subscription)
 	for _, dur := range c.durations {
 		ctx2, cancel := context.WithTimeout(ctx, dur)
 		defer cancel()
-		id := sub.name[len(sub.name)-2:]
+		id := sub.name[len(sub.name)-1:]
 		log.Printf("%s: start receive", id)
 		prev := c.total
 		err := sub.Receive(ctx2, c.process)
@@ -220,25 +231,4 @@ func (c *consumer) process(_ context.Context, m *Message) {
 	// Some messages will need to have their ack deadline extended due to this delay.
 	delay := rand.Intn(int(ackDeadline * 3))
 	time.AfterFunc(time.Duration(delay), m.Ack)
-}
-
-// diff returns counts of the differences between got and want.
-func diff(got, want map[string]int) map[string]int {
-	ids := make(map[string]struct{})
-	for k := range got {
-		ids[k] = struct{}{}
-	}
-	for k := range want {
-		ids[k] = struct{}{}
-	}
-
-	gotWantCount := make(map[string]int)
-	for k := range ids {
-		if got[k] == want[k] {
-			continue
-		}
-		desc := fmt.Sprintf("<got: %v ; want: %v>", got[k], want[k])
-		gotWantCount[desc] += 1
-	}
-	return gotWantCount
 }

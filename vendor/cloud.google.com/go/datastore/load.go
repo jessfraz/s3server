@@ -1,4 +1,4 @@
-// Copyright 2014 Google Inc. All Rights Reserved.
+// Copyright 2014 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -58,6 +58,10 @@ func typeMismatchReason(p Property, v reflect.Value) string {
 	}
 
 	return fmt.Sprintf("type mismatch: %s versus %v", entityType, v.Type())
+}
+
+func overflowReason(x interface{}, v reflect.Value) string {
+	return fmt.Sprintf("value %v overflows struct field of type %v", x, v.Type())
 }
 
 type propertyLoader struct {
@@ -243,7 +247,7 @@ func plsFieldLoad(v reflect.Value, p Property, subfields []string) (ok bool, err
 }
 
 // setVal sets 'v' to the value of the Property 'p'.
-func setVal(v reflect.Value, p Property) string {
+func setVal(v reflect.Value, p Property) (s string) {
 	pValue := p.Value
 	switch v.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -252,7 +256,7 @@ func setVal(v reflect.Value, p Property) string {
 			return typeMismatchReason(p, v)
 		}
 		if v.OverflowInt(x) {
-			return fmt.Sprintf("value %v overflows struct field of type %v", x, v.Type())
+			return overflowReason(x, v)
 		}
 		v.SetInt(x)
 	case reflect.Bool:
@@ -273,12 +277,12 @@ func setVal(v reflect.Value, p Property) string {
 			return typeMismatchReason(p, v)
 		}
 		if v.OverflowFloat(x) {
-			return fmt.Sprintf("value %v overflows struct field of type %v", x, v.Type())
+			return overflowReason(x, v)
 		}
 		v.SetFloat(x)
 	case reflect.Ptr:
-		// v must be either a pointer to a Key or Entity.
-		if v.Type() != typeOfKeyPtr && v.Type().Elem().Kind() != reflect.Struct {
+		// v must be a pointer to either a Key, an Entity, or one of the supported basic types.
+		if v.Type() != typeOfKeyPtr && v.Type().Elem().Kind() != reflect.Struct && !isValidPointerType(v.Type().Elem()) {
 			return typeMismatchReason(p, v)
 		}
 
@@ -290,21 +294,38 @@ func setVal(v reflect.Value, p Property) string {
 			return ""
 		}
 
-		switch x := pValue.(type) {
-		case *Key:
+		if x, ok := p.Value.(*Key); ok {
 			if _, ok := v.Interface().(*Key); !ok {
 				return typeMismatchReason(p, v)
 			}
 			v.Set(reflect.ValueOf(x))
+			return ""
+		}
+		if v.IsNil() {
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+		switch x := pValue.(type) {
 		case *Entity:
-			if v.IsNil() {
-				v.Set(reflect.New(v.Type().Elem()))
-			}
 			err := loadEntity(v.Interface(), x)
 			if err != nil {
 				return err.Error()
 			}
-
+		case int64:
+			if v.Elem().OverflowInt(x) {
+				return overflowReason(x, v.Elem())
+			}
+			v.Elem().SetInt(x)
+		case float64:
+			if v.Elem().OverflowFloat(x) {
+				return overflowReason(x, v.Elem())
+			}
+			v.Elem().SetFloat(x)
+		case bool:
+			v.Elem().SetBool(x)
+		case string:
+			v.Elem().SetString(x)
+		case GeoPoint, time.Time:
+			v.Elem().Set(reflect.ValueOf(x))
 		default:
 			return typeMismatchReason(p, v)
 		}
@@ -391,18 +412,15 @@ func loadEntityToStruct(dst interface{}, ent *Entity) error {
 	if err != nil {
 		return err
 	}
-	// Load properties.
-	err = pls.Load(ent.Properties)
-	if err != nil {
-		return err
-	}
-	// Load key.
+
+	// Try and load key.
 	keyField := pls.codec.Match(keyFieldName)
 	if keyField != nil && ent.Key != nil {
 		pls.v.FieldByIndex(keyField.Index).Set(reflect.ValueOf(ent.Key))
 	}
 
-	return nil
+	// Load properties.
+	return pls.Load(ent.Properties)
 }
 
 func (s structPLS) Load(props []Property) error {

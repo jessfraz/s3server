@@ -8,7 +8,7 @@ Go packages for [Google Cloud Platform](https://cloud.google.com) services.
 import "cloud.google.com/go"
 ```
 
-To install the packages on your system,
+To install the packages on your system, *do not clone the repo*. Instead use
 
 ```
 $ go get -u cloud.google.com/go/...
@@ -33,108 +33,154 @@ make backwards-incompatible changes.
 
 ## News
 
-_January 18, 2018_
+_July 11, 2018_
 
-*v0.18.0*
+*v0.25.0*
+
+- Added [Code of Conduct](https://github.com/GoogleCloudPlatform/google-cloud-go/blob/master/CODE_OF_CONDUCT.md)
+- bigtable:
+  - cbt: Support a GC policy of "never".
+- errorreporting:
+  - Support User.
+  - Close now calls Flush.
+  - Use OnError (previously ignored).
+  - Pass through the RPC error as-is to OnError.
+- httpreplay: A tool for recording and replaying HTTP requests
+  (for the bigquery and storage clients in this repo).
+- kms: v1 client added
+- logging: add SourceLocation to Entry.
+- storage: improve CRC checking on read.
+
+
+_June 18, 2018_
+
+*v0.24.0*
+
+- bigquery: Support for the NUMERIC type.
+- bigtable:
+  - cbt: Optionally specify columns for read/lookup
+  - Support instance-level administration.
+- oslogin: New client for the OS Login API.
+- pubsub:
+  - The package is now stable. There will be no further breaking changes.
+  - Internal changes to improve Subscription.Receive behavior.
+- storage: Support updating bucket lifecycle config.
+- spanner: Support struct-typed parameter bindings.
+- texttospeech: New client for the Text-to-Speech API.
+
+_May 18, 2018_
+
+*v0.23.0*
+
+- bigquery: Add DDL stats to query statistics.
+- bigtable:
+  - cbt: Add cells-per-column limit for row lookup.
+  - cbt: Make it possible to combine read filters.
+- dlp: v2beta2 client removed. Use the v2 client instead.
+- firestore, spanner: Fix compilation errors due to protobuf changes.
+
+_May 8, 2018_
+
+*v0.22.0*
+
+- bigtable:
+  - cbt: Support cells per column limit for row read.
+  - bttest: Correctly handle empty RowSet.
+  - Fix ReadModifyWrite operation in emulator.
+  - Fix API path in GetCluster.
 
 - bigquery:
-  - Marked stable.
-  - Schema inference of nullable fields supported.
-  - Added TimePartitioning to QueryConfig.
+  - BEHAVIOR CHANGE: Retry on 503 status code.
+  - Add dataset.DeleteWithContents.
+  - Add SchemaUpdateOptions for query jobs.
+  - Add Timeline to QueryStatistics.
+  - Add more stats to ExplainQueryStage.
+  - Support Parquet data format.
 
-- firestore: Data provided to DocumentRef.Set with a Merge option can contain
-  Delete sentinels.
+- datastore:
+  - Support omitempty for times.
 
-- logging: Clients can accept parent resources other than projects.
+- dlp:
+  - **BREAKING CHANGE:** Remove v1beta1 client. Please migrate to the v2 client,
+  which is now out of beta.
+  - Add v2 client.
+
+- firestore:
+  - BEHAVIOR CHANGE: Treat set({}, MergeAll) as valid.
+
+- iam:
+  - Support JWT signing via SignJwt callopt.
+
+- profiler:
+  - BEHAVIOR CHANGE: PollForSerialOutput returns an error when context.Done.
+  - BEHAVIOR CHANGE: Increase the initial backoff to 1 minute.
+  - Avoid returning empty serial port output.
 
 - pubsub:
-  - pubsub/pstest: A lighweight fake for pubsub. Experimental; feedback welcome.
-  - Support updating more subscription metadata: AckDeadline,
-    RetainAckedMessages and RetentionDuration.
+  - BEHAVIOR CHANGE: Don't backoff during next retryable error once stream is healthy.
+  - BEHAVIOR CHANGE: Don't backoff on EOF.
+  - pstest: Support Acknowledge and ModifyAckDeadline RPCs.
 
-- oslogin/apiv1beta: New client for the Cloud OS Login API.
-
-- rpcreplay: A package for recording and replaying gRPC traffic.
+- redis:
+  - Add v1 beta Redis client.
 
 - spanner:
-  - Add a ReadWithOptions that supports a row limit, as well as an index.
-  - Support query plan and execution statistics.
-  - Added [OpenCensus](http://opencensus.io) support.
+  - Support SessionLabels.
 
-- storage: Clarify checksum validation for gzipped files (it is not validated
-  when the file is served uncompressed).
+- speech:
+  - Add api v1 beta1 client.
 
-
-_December 11, 2017_
-
-*v0.17.0*
-
-- firestore BREAKING CHANGES:
-  - Remove UpdateMap and UpdateStruct; rename UpdatePaths to Update.
-    Change
-        `docref.UpdateMap(ctx, map[string]interface{}{"a.b", 1})`
-    to
-        `docref.Update(ctx, []firestore.Update{{Path: "a.b", Value: 1}})`
-
-    Change
-        `docref.UpdateStruct(ctx, []string{"Field"}, aStruct)`
-    to
-        `docref.Update(ctx, []firestore.Update{{Path: "Field", Value: aStruct.Field}})`
-  - Rename MergePaths to Merge; require args to be FieldPaths
-  - A value stored as an integer can be read into a floating-point field, and vice versa.
-- bigtable/cmd/cbt:
-  - Support deleting a column.
-  - Add regex option for row read.
-- spanner: Mark stable.
 - storage:
-  - Add Reader.ContentEncoding method.
-  - Fix handling of SignedURL headers.
+  - BEHAVIOR CHANGE: Retry reads when retryable error occurs.
+  - Fix delete of object in requester-pays bucket.
+  - Support KMS integration.
+
+_April 9, 2018_
+
+*v0.21.0*
+
 - bigquery:
-  - If Uploader.Put is called with no rows, it returns nil without making a
-    call.
-  - Schema inference supports the "nullable" option in struct tags for
-    non-required fields.
-  - TimePartitioning supports "Field".
+  - Add OpenCensus tracing.
 
+- firestore:
+  - **BREAKING CHANGE:** If a document does not exist, return a DocumentSnapshot
+    whose Exists method returns false. DocumentRef.Get and Transaction.Get
+    return the non-nil DocumentSnapshot in addition to a NotFound error.
+    **DocumentRef.GetAll and Transaction.GetAll return a non-nil
+    DocumentSnapshot instead of nil.**
+  - Add DocumentIterator.Stop. **Call Stop whenever you are done with a
+    DocumentIterator.**
+  - Added Query.Snapshots and DocumentRef.Snapshots, which provide realtime
+    notification of updates. See https://cloud.google.com/firestore/docs/query-data/listen.
+  - Canceling an RPC now always returns a grpc.Status with codes.Canceled.
 
-_October 30, 2017_
+- spanner:
+  - Add `CommitTimestamp`, which supports inserting the commit timestamp of a
+    transaction into a column.
 
-*v0.16.0*
+_March 22, 2018_
 
-- Other bigquery changes:
-  - `JobIterator.Next` returns `*Job`; removed `JobInfo` (BREAKING CHANGE).
-  - UseStandardSQL is deprecated; set UseLegacySQL to true if you need
-    Legacy SQL.
-  - Uploader.Put will generate a random insert ID if you do not provide one.
-  - Support time partitioning for load jobs.
-  - Support dry-run queries.
-  - A `Job` remembers its last retrieved status.
-  - Support retrieving job configuration.
-  - Support labels for jobs and tables.
-  - Support dataset access lists.
-  - Improve support for external data sources, including data from Bigtable and
-    Google Sheets, and tables with external data.
-  - Support updating a table's view configuration.
-  - Fix uploading civil times with nanoseconds.
+*v0.20.0*
 
-- storage:
-  - Support PubSub notifications.
-  - Support Requester Pays buckets.
+- bigquery: Support SchemaUpdateOptions for load jobs.
 
-- profiler: Support goroutine and mutex profile types.
+- bigtable:
+  - Add SampleRowKeys.
+  - cbt: Support union, intersection GCPolicy.
+  - Retry admin RPCS.
+  - Add trace spans to retries.
 
+- datastore: Add OpenCensus tracing.
 
-_October 3, 2017_
+- firestore:
+  - Fix queries involving Null and NaN.
+  - Allow Timestamp protobuffers for time values.
 
-*v0.15.0*
+- logging: Add a WriteTimeout option.
 
-- firestore: beta release. See the
-  [announcement](https://firebase.googleblog.com/2017/10/introducing-cloud-firestore.html).
+- spanner: Support Batch API.
 
-- errorreporting: The existing package has been redesigned.
-
-- errors: This package has been removed. Use errorreporting.
-
+- storage: Add OpenCensus tracing.
 
 [Older news](https://github.com/GoogleCloudPlatform/google-cloud-go/blob/master/old-news.md)
 
@@ -143,7 +189,7 @@ _October 3, 2017_
 Google API                       | Status       | Package
 ---------------------------------|--------------|-----------------------------------------------------------
 [BigQuery][cloud-bigquery]       | stable       | [`cloud.google.com/go/bigquery`][cloud-bigquery-ref]
-[Bigtable][cloud-bigtable]       | beta         | [`cloud.google.com/go/bigtable`][cloud-bigtable-ref]
+[Bigtable][cloud-bigtable]       | stable       | [`cloud.google.com/go/bigtable`][cloud-bigtable-ref]
 [Container][cloud-container]     | alpha        | [`cloud.google.com/go/container/apiv1`][cloud-container-ref]
 [Data Loss Prevention][cloud-dlp]| alpha        | [`cloud.google.com/go/dlp/apiv2beta1`][cloud-dlp-ref]
 [Datastore][cloud-datastore]     | stable       | [`cloud.google.com/go/datastore`][cloud-datastore-ref]
@@ -153,8 +199,8 @@ Google API                       | Status       | Package
 [Language][cloud-language]       | stable       | [`cloud.google.com/go/language/apiv1`][cloud-language-ref]
 [Logging][cloud-logging]         | stable       | [`cloud.google.com/go/logging`][cloud-logging-ref]
 [Monitoring][cloud-monitoring]   | beta         | [`cloud.google.com/go/monitoring/apiv3`][cloud-monitoring-ref]
-[OS Login][cloud-oslogin]              | alpha        | [`cloud.google.com/compute/docs/oslogin/rest`][cloud-oslogin-ref]
-[Pub/Sub][cloud-pubsub]          | beta         | [`cloud.google.com/go/pubsub`][cloud-pubsub-ref]
+[OS Login][cloud-oslogin]        | alpha        | [`cloud.google.com/compute/docs/oslogin/rest`][cloud-oslogin-ref]
+[Pub/Sub][cloud-pubsub]          | stable       | [`cloud.google.com/go/pubsub`][cloud-pubsub-ref]
 [Spanner][cloud-spanner]         | stable       | [`cloud.google.com/go/spanner`][cloud-spanner-ref]
 [Speech][cloud-speech]           | stable       | [`cloud.google.com/go/speech/apiv1`][cloud-speech-ref]
 [Storage][cloud-storage]         | stable       | [`cloud.google.com/go/storage`][cloud-storage-ref]

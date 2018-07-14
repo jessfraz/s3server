@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -85,10 +85,11 @@ const (
 	xGoogAPIMetadata = "x-goog-api-client"
 	zoneNameLabel    = "zone"
 	versionLabel     = "version"
+	languageLabel    = "language"
 	instanceLabel    = "instance"
 	scope            = "https://www.googleapis.com/auth/monitoring.write"
 
-	initialBackoff = time.Second
+	initialBackoff = time.Minute
 	// Ensure the agent will recover within 1 hour.
 	maxBackoff        = time.Hour
 	backoffMultiplier = 1.3 // Backoff envelope increases by this factor on each retry.
@@ -97,12 +98,14 @@ const (
 
 // Config is the profiler configuration.
 type Config struct {
-	// Service (or deprecated Target) must be provided to start the profiler.
-	// It specifies the name of the service under which the profiled data
-	// will be recorded and exposed at the Profiler UI for the project.
-	// You can specify an arbitrary string, but see Deployment.target at
+	// Service must be provided to start the profiler. It specifies the name of
+	// the service under which the profiled data will be recorded and exposed at
+	// the Profiler UI for the project. You can specify an arbitrary string, but
+	// see Deployment.target at
 	// https://github.com/googleapis/googleapis/blob/master/google/devtools/cloudprofiler/v2/profiler.proto
-	// for restrictions.
+	// for restrictions. If the parameter is not set, the agent will probe
+	// GAE_SERVICE environment variable which is present in Google App Engine
+	// environment.
 	// NOTE: The string should be the same across different replicas of
 	// your service so that the globally constant profiling rate is
 	// maintained. Do not put things like PID or unique pod ID in the name.
@@ -111,7 +114,8 @@ type Config struct {
 	// ServiceVersion is an optional field specifying the version of the
 	// service. It can be an arbitrary string. Profiler profiles
 	// once per minute for each version of each service in each zone.
-	// ServiceVersion defaults to an empty string.
+	// ServiceVersion defaults to GAE_VERSION environment variable if that is
+	// set, or to empty string otherwise.
 	ServiceVersion string
 
 	// DebugLogging enables detailed debug logging from profiler. It
@@ -123,8 +127,15 @@ type Config struct {
 	// than Go 1.8.
 	MutexProfiling bool
 
-	// ProjectID is the Cloud Console project ID to use instead of
-	// the one read from the VM metadata server.
+	// When true, collecting the heap profiles is disabled.
+	NoHeapProfiling bool
+
+	// When true, collecting the goroutine profiles is disabled.
+	NoGoroutineProfiling bool
+
+	// ProjectID is the Cloud Console project ID to use instead of the one set by
+	// GOOGLE_CLOUD_PROJECT environment variable or read from the VM metadata
+	// server.
 	//
 	// Set this if you are running the agent in your local environment
 	// or anywhere else outside of Google Cloud Platform.
@@ -135,14 +146,11 @@ type Config struct {
 	// for testing.
 	APIAddr string
 
-	// Target is deprecated, use Service instead.
-	Target string
-
 	instance string
 	zone     string
 }
 
-// startError represents the error occured during the
+// startError represents the error occurred during the
 // initializating and starting of the agent.
 var startError error
 
@@ -256,6 +264,9 @@ func (a *agent) createProfile(ctx context.Context) *pb.Profile {
 	gax.Invoke(ctx, func(ctx context.Context, settings gax.CallSettings) error {
 		var err error
 		p, err = a.client.CreateProfile(ctx, &req, grpc.Trailer(&md))
+		if err != nil {
+			debugLog("failed to create a profile, will retry: %v", err)
+		}
 		return err
 	}, gax.WithRetry(func() gax.Retryer {
 		return &retryer{
@@ -392,7 +403,7 @@ func withXGoogHeader(ctx context.Context, keyval ...string) context.Context {
 }
 
 func initializeAgent(c pb.ProfilerServiceClient) *agent {
-	labels := map[string]string{}
+	labels := map[string]string{languageLabel: "go"}
 	if config.zone != "" {
 		labels[zoneNameLabel] = config.zone
 	}
@@ -401,7 +412,7 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 	}
 	d := &pb.Deployment{
 		ProjectId: config.ProjectID,
-		Target:    config.Target,
+		Target:    config.Service,
 		Labels:    labels,
 	}
 
@@ -411,7 +422,13 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 		profileLabels[instanceLabel] = config.instance
 	}
 
-	profileTypes := []pb.ProfileType{pb.ProfileType_CPU, pb.ProfileType_HEAP, pb.ProfileType_THREADS}
+	profileTypes := []pb.ProfileType{pb.ProfileType_CPU}
+	if !config.NoHeapProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_HEAP)
+	}
+	if !config.NoGoroutineProfiling {
+		profileTypes = append(profileTypes, pb.ProfileType_THREADS)
+	}
 	if mutexEnabled {
 		profileTypes = append(profileTypes, pb.ProfileType_CONTENTION)
 	}
@@ -427,21 +444,26 @@ func initializeAgent(c pb.ProfilerServiceClient) *agent {
 func initializeConfig(cfg Config) error {
 	config = cfg
 
-	switch {
-	case config.Service != "":
-		config.Target = config.Service
-	case config.Target == "":
-		config.Target = os.Getenv("GAE_SERVICE")
+	if config.Service == "" {
+		config.Service = os.Getenv("GAE_SERVICE")
 	}
-
-	if config.Target == "" {
-		return errors.New("service name must be specified in the configuration")
+	if config.Service == "" {
+		return errors.New("service name must be configured")
 	}
 
 	if config.ServiceVersion == "" {
 		config.ServiceVersion = os.Getenv("GAE_VERSION")
 	}
 
+	if projectID := os.Getenv("GOOGLE_CLOUD_PROJECT"); config.ProjectID == "" && projectID != "" {
+		// Cloud Shell and App Engine set this environment variable to the project
+		// ID, so use it if present. In case of App Engine the project ID is also
+		// available from the GCE metadata server, but by using the environment
+		// variable saves one request to the metadata server. The environment
+		// project ID is only used if no project ID is provided in the
+		// configuration.
+		config.ProjectID = projectID
+	}
 	if onGCE() {
 		var err error
 		if config.ProjectID == "" {
@@ -474,6 +496,7 @@ func initializeConfig(cfg Config) error {
 // server for instructions, and collects and uploads profiles as
 // requested.
 func pollProfilerService(ctx context.Context, a *agent) {
+	debugLog("profiler has started")
 	for {
 		p := a.createProfile(ctx)
 		a.profileAndUpload(ctx, p)

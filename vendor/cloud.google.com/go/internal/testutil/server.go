@@ -1,5 +1,5 @@
 /*
-Copyright 2016 Google Inc. All Rights Reserved.
+Copyright 2016 Google LLC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import (
 	"net"
 	"strconv"
 
-	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // A Server is an in-process gRPC server, listening on a system-chosen port on
@@ -90,7 +91,7 @@ func PageBounds(pageSize int, pageToken string, length int) (from, to int, nextP
 	if pageToken != "" {
 		from, err = strconv.Atoi(pageToken)
 		if err != nil {
-			return 0, 0, "", grpc.Errorf(codes.InvalidArgument, "bad page token: %v", err)
+			return 0, 0, "", status.Errorf(codes.InvalidArgument, "bad page token: %v", err)
 		}
 		if from >= length {
 			return length, length, "", nil

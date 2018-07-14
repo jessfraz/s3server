@@ -1,4 +1,4 @@
-// Copyright 2016 Google Inc. All Rights Reserved.
+// Copyright 2016 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,32 @@ package datastore
 
 import (
 	"testing"
+	"time"
 
 	"cloud.google.com/go/internal/testutil"
 
 	pb "google.golang.org/genproto/googleapis/datastore/v1"
 )
 
-func TestInterfaceToProtoNilKey(t *testing.T) {
-	var iv *Key
-	pv, err := interfaceToProto(iv, false)
-	if err != nil {
-		t.Fatalf("nil key: interfaceToProto: %v", err)
-	}
-
-	_, ok := pv.ValueType.(*pb.Value_NullValue)
-	if !ok {
-		t.Errorf("nil key: type:\ngot: %T\nwant: %T", pv.ValueType, &pb.Value_NullValue{})
+func TestInterfaceToProtoNil(t *testing.T) {
+	// A nil *Key, or a nil value of any other pointer type, should convert to a NullValue.
+	for _, in := range []interface{}{
+		(*Key)(nil),
+		(*int)(nil),
+		(*string)(nil),
+		(*bool)(nil),
+		(*float64)(nil),
+		(*GeoPoint)(nil),
+		(*time.Time)(nil),
+	} {
+		got, err := interfaceToProto(in, false)
+		if err != nil {
+			t.Fatalf("%T: %v", in, err)
+		}
+		_, ok := got.ValueType.(*pb.Value_NullValue)
+		if !ok {
+			t.Errorf("%T: got: %T\nwant: %T", in, got.ValueType, &pb.Value_NullValue{})
+		}
 	}
 }
 
@@ -190,6 +200,86 @@ func TestSaveEntityNested(t *testing.T) {
 
 		if !testutil.Equal(tc.want, got) {
 			t.Errorf("%s: compare:\ngot:  %#v\nwant: %#v", tc.desc, got, tc.want)
+		}
+	}
+}
+
+func TestSavePointers(t *testing.T) {
+	for _, test := range []struct {
+		desc string
+		in   interface{}
+		want []Property
+	}{
+		{
+			desc: "nil pointers save as nil-valued properties",
+			in:   &Pointers{},
+			want: []Property{
+				{Name: "Pi", Value: nil},
+				{Name: "Ps", Value: nil},
+				{Name: "Pb", Value: nil},
+				{Name: "Pf", Value: nil},
+				{Name: "Pg", Value: nil},
+				{Name: "Pt", Value: nil},
+			},
+		},
+		{
+			desc: "nil omitempty pointers not saved",
+			in:   &PointersOmitEmpty{},
+			want: []Property(nil),
+		},
+		{
+			desc: "non-nil zero-valued pointers save as zero values",
+			in:   populatedPointers(),
+			want: []Property{
+				{Name: "Pi", Value: int64(0)},
+				{Name: "Ps", Value: ""},
+				{Name: "Pb", Value: false},
+				{Name: "Pf", Value: 0.0},
+				{Name: "Pg", Value: GeoPoint{}},
+				{Name: "Pt", Value: time.Time{}},
+			},
+		},
+		{
+			desc: "non-nil non-zero-valued pointers save as the appropriate values",
+			in: func() *Pointers {
+				p := populatedPointers()
+				*p.Pi = 1
+				*p.Ps = "x"
+				*p.Pb = true
+				*p.Pf = 3.14
+				*p.Pg = GeoPoint{Lat: 1, Lng: 2}
+				*p.Pt = time.Unix(100, 0)
+				return p
+			}(),
+			want: []Property{
+				{Name: "Pi", Value: int64(1)},
+				{Name: "Ps", Value: "x"},
+				{Name: "Pb", Value: true},
+				{Name: "Pf", Value: 3.14},
+				{Name: "Pg", Value: GeoPoint{Lat: 1, Lng: 2}},
+				{Name: "Pt", Value: time.Unix(100, 0)},
+			},
+		},
+	} {
+		got, err := SaveStruct(test.in)
+		if err != nil {
+			t.Fatalf("%s: %v", test.desc, err)
+		}
+		if !testutil.Equal(got, test.want) {
+			t.Errorf("%s\ngot  %#v\nwant %#v\n", test.desc, got, test.want)
+		}
+	}
+}
+
+func TestSaveEmptySlice(t *testing.T) {
+	// Zero-length slice fields are not saved.
+	for _, slice := range [][]string{nil, {}} {
+		got, err := SaveStruct(&struct{ S []string }{S: slice})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 0 {
+			t.Errorf("%#v: got %d properties, wanted zero", slice, len(got))
 		}
 	}
 }

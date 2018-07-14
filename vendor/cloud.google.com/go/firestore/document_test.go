@@ -1,4 +1,4 @@
-// Copyright 2017 Google Inc. All Rights Reserved.
+// Copyright 2017 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -69,10 +69,11 @@ func TestNewDocumentSnapshot(t *testing.T) {
 		Ref:        docRef,
 		CreateTime: time.Unix(10, 0).UTC(),
 		UpdateTime: time.Unix(20, 0).UTC(),
+		ReadTime:   aTime,
 		proto:      in,
 		c:          c,
 	}
-	got, err := newDocumentSnapshot(docRef, in, c)
+	got, err := newDocumentSnapshot(docRef, in, c, aTimestamp)
 	if err != nil {
 		t.Fatal(err)
 	}

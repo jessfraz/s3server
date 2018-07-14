@@ -67,11 +67,6 @@
       "location": "query",
       "type": "string"
     },
-    "bearer_token": {
-      "description": "OAuth bearer token.",
-      "location": "query",
-      "type": "string"
-    },
     "callback": {
       "description": "JSONP",
       "location": "query",
@@ -91,12 +86,6 @@
       "description": "OAuth 2.0 token for the current user.",
       "location": "query",
       "type": "string"
-    },
-    "pp": {
-      "default": "true",
-      "description": "Pretty-print response.",
-      "location": "query",
-      "type": "boolean"
     },
     "prettyPrint": {
       "default": "true",
@@ -1554,7 +1543,7 @@
       }
     }
   },
-  "revision": "20180126",
+  "revision": "20180614",
   "rootUrl": "https://dataflow.googleapis.com/",
   "schemas": {
     "ApproximateProgress": {
@@ -1658,6 +1647,10 @@
           "description": "The time this event was emitted to indicate a new target or current\nnum_workers value.",
           "format": "google-datetime",
           "type": "string"
+        },
+        "workerPool": {
+          "description": "A short and friendly name for the worker pool this event refers to,\npopulated from the value of PoolStageRelation::user_pool_name.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -1684,6 +1677,48 @@
           "description": "The maximum number of workers to cap scaling at.",
           "format": "int32",
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "BigQueryIODetails": {
+      "description": "Metadata for a BigQuery connector used by the job.",
+      "id": "BigQueryIODetails",
+      "properties": {
+        "dataset": {
+          "description": "Dataset accessed in the connection.",
+          "type": "string"
+        },
+        "projectId": {
+          "description": "Project accessed in the connection.",
+          "type": "string"
+        },
+        "query": {
+          "description": "Query used to access data in the connection.",
+          "type": "string"
+        },
+        "table": {
+          "description": "Table accessed in the connection.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "BigTableIODetails": {
+      "description": "Metadata for a BigTable connector used by the job.",
+      "id": "BigTableIODetails",
+      "properties": {
+        "instanceId": {
+          "description": "InstanceId accessed in the connection.",
+          "type": "string"
+        },
+        "projectId": {
+          "description": "ProjectId accessed in the connection.",
+          "type": "string"
+        },
+        "tableId": {
+          "description": "TableId accessed in the connection.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -1826,7 +1861,8 @@
             "OR",
             "AND",
             "SET",
-            "DISTRIBUTION"
+            "DISTRIBUTION",
+            "LATEST_VALUE"
           ],
           "enumDescriptions": [
             "Counter aggregation kind was not set.",
@@ -1837,7 +1873,8 @@
             "Aggregated value represents the logical 'or' of all contributed values.",
             "Aggregated value represents the logical 'and' of all contributed values.",
             "Aggregated value is a set of unique contributed values.",
-            "Aggregated value captures statistics about a distribution."
+            "Aggregated value captures statistics about a distribution.",
+            "Aggregated value tracks the latest value of a variable."
           ],
           "type": "string"
         },
@@ -1986,6 +2023,10 @@
           "$ref": "SplitInt64",
           "description": "Integer value for Sum, Max, Min."
         },
+        "integerGauge": {
+          "$ref": "IntegerGauge",
+          "description": "Gauge data"
+        },
         "integerList": {
           "$ref": "IntegerList",
           "description": "List of integers, for Set."
@@ -2072,6 +2113,21 @@
         },
         "vmInstance": {
           "description": "VM instance name the data disks mounted to, for example\n\"myproject-1014-104817-4c2-harness-0\".",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "DatastoreIODetails": {
+      "description": "Metadata for a Datastore connector used by the job.",
+      "id": "DatastoreIODetails",
+      "properties": {
+        "namespace": {
+          "description": "Namespace used in the connection.",
+          "type": "string"
+        },
+        "projectId": {
+          "description": "ProjectId accessed in the connection.",
           "type": "string"
         }
       },
@@ -2425,6 +2481,17 @@
       },
       "type": "object"
     },
+    "FileIODetails": {
+      "description": "Metadata for a File connector used by the job.",
+      "id": "FileIODetails",
+      "properties": {
+        "filePattern": {
+          "description": "File Pattern used to access files by the connector.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "FlattenInstruction": {
       "description": "An instruction that copies its inputs (zero or more) to its (single) output.",
       "id": "FlattenInstruction",
@@ -2587,6 +2654,22 @@
       },
       "type": "object"
     },
+    "IntegerGauge": {
+      "description": "A metric value representing temporal values of a variable.",
+      "id": "IntegerGauge",
+      "properties": {
+        "timestamp": {
+          "description": "The time at which this value was measured. Measured as msecs from epoch.",
+          "format": "google-datetime",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "SplitInt64",
+          "description": "The value of the variable represented by this gauge."
+        }
+      },
+      "type": "object"
+    },
     "IntegerList": {
       "description": "A metric value representing a list of integers.",
       "id": "IntegerList",
@@ -2675,6 +2758,10 @@
         "id": {
           "description": "The unique ID of this job.\n\nThis field is set by the Cloud Dataflow service when the Job is\ncreated, and is immutable for the life of the job.",
           "type": "string"
+        },
+        "jobMetadata": {
+          "$ref": "JobMetadata",
+          "description": "This field is populated by the Dataflow service to support filtering jobs\nby the metadata values provided here. Populated for ListJobs and all GetJob\nviews SUMMARY and higher."
         },
         "labels": {
           "additionalProperties": {
@@ -2846,6 +2933,59 @@
           "description": "The timestamp of the message.",
           "format": "google-datetime",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "JobMetadata": {
+      "description": "Metadata available primarily for filtering jobs. Will be included in the\nListJob response and Job SUMMARY view+.",
+      "id": "JobMetadata",
+      "properties": {
+        "bigTableDetails": {
+          "description": "Identification of a BigTable source used in the Dataflow job.",
+          "items": {
+            "$ref": "BigTableIODetails"
+          },
+          "type": "array"
+        },
+        "bigqueryDetails": {
+          "description": "Identification of a BigQuery source used in the Dataflow job.",
+          "items": {
+            "$ref": "BigQueryIODetails"
+          },
+          "type": "array"
+        },
+        "datastoreDetails": {
+          "description": "Identification of a Datastore source used in the Dataflow job.",
+          "items": {
+            "$ref": "DatastoreIODetails"
+          },
+          "type": "array"
+        },
+        "fileDetails": {
+          "description": "Identification of a File source used in the Dataflow job.",
+          "items": {
+            "$ref": "FileIODetails"
+          },
+          "type": "array"
+        },
+        "pubsubDetails": {
+          "description": "Identification of a PubSub source used in the Dataflow job.",
+          "items": {
+            "$ref": "PubSubIODetails"
+          },
+          "type": "array"
+        },
+        "sdkVersion": {
+          "$ref": "SdkVersion",
+          "description": "The SDK version used to run the job."
+        },
+        "spannerDetails": {
+          "description": "Identification of a Spanner source used in the Dataflow job.",
+          "items": {
+            "$ref": "SpannerIODetails"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -3124,6 +3264,10 @@
           "description": "A struct value describing properties of a distribution of numeric values.",
           "type": "any"
         },
+        "gauge": {
+          "description": "A struct value describing properties of a Gauge.\nMetrics of gauge type show the value of a metric across time, and is\naggregated based on the newest value.",
+          "type": "any"
+        },
         "internal": {
           "description": "Worker-computed aggregate value for internal use by the Dataflow\nservice.",
           "type": "any"
@@ -3197,7 +3341,8 @@
             "OR",
             "AND",
             "SET",
-            "DISTRIBUTION"
+            "DISTRIBUTION",
+            "LATEST_VALUE"
           ],
           "enumDescriptions": [
             "Counter aggregation kind was not set.",
@@ -3208,7 +3353,8 @@
             "Aggregated value represents the logical 'or' of all contributed values.",
             "Aggregated value represents the logical 'and' of all contributed values.",
             "Aggregated value is a set of unique contributed values.",
-            "Aggregated value captures statistics about a distribution."
+            "Aggregated value captures statistics about a distribution.",
+            "Aggregated value tracks the latest value of a variable."
           ],
           "type": "string"
         },
@@ -3466,6 +3612,21 @@
       },
       "type": "object"
     },
+    "PubSubIODetails": {
+      "description": "Metadata for a PubSub connector used by the job.",
+      "id": "PubSubIODetails",
+      "properties": {
+        "subscription": {
+          "description": "Subscription used in the connection.",
+          "type": "string"
+        },
+        "topic": {
+          "description": "Topic accessed in the connection.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "PubsubLocation": {
       "description": "Identifies a pubsub location to use for transferring data into or\nout of a streaming Dataflow job.",
       "id": "PubsubLocation",
@@ -3613,8 +3774,16 @@
           "format": "int32",
           "type": "integer"
         },
+        "network": {
+          "description": "Network to which VMs will be assigned.  If empty or unspecified,\nthe service will use the network \"default\".",
+          "type": "string"
+        },
         "serviceAccountEmail": {
           "description": "The email address of the service account to run the job as.",
+          "type": "string"
+        },
+        "subnetwork": {
+          "description": "Subnetwork to which VMs will be assigned, if desired.  Expected to be of\nthe form \"regions/REGION/subnetworks/SUBNETWORK\".",
           "type": "string"
         },
         "tempLocation": {
@@ -3623,6 +3792,39 @@
         },
         "zone": {
           "description": "The Compute Engine [availability\nzone](https://cloud.google.com/compute/docs/regions-zones/regions-zones)\nfor launching worker instances to run your pipeline.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SdkVersion": {
+      "description": "The version of the SDK used to run the jobl",
+      "id": "SdkVersion",
+      "properties": {
+        "sdkSupportStatus": {
+          "description": "The support status for this SDK version.",
+          "enum": [
+            "UNKNOWN",
+            "SUPPORTED",
+            "STALE",
+            "DEPRECATED",
+            "UNSUPPORTED"
+          ],
+          "enumDescriptions": [
+            "Cloud Dataflow is unaware of this version.",
+            "This is a known version of an SDK, and is supported.",
+            "A newer version of the SDK family exists, and an update is recommended.",
+            "This version of the SDK is deprecated and will eventually be no\nlonger supported.",
+            "Support for this SDK version has ended and it should no longer be used."
+          ],
+          "type": "string"
+        },
+        "version": {
+          "description": "The version of the SDK used to run the job.",
+          "type": "string"
+        },
+        "versionDisplayName": {
+          "description": "A readable string describing the version of the sdk.",
           "type": "string"
         }
       },
@@ -4053,6 +4255,25 @@
         "source": {
           "$ref": "Source",
           "description": "DEPRECATED"
+        }
+      },
+      "type": "object"
+    },
+    "SpannerIODetails": {
+      "description": "Metadata for a Spanner connector used by the job.",
+      "id": "SpannerIODetails",
+      "properties": {
+        "databaseId": {
+          "description": "DatabaseId accessed in the connection.",
+          "type": "string"
+        },
+        "instanceId": {
+          "description": "InstanceId accessed in the connection.",
+          "type": "string"
+        },
+        "projectId": {
+          "description": "ProjectId accessed in the connection.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -4832,6 +5053,49 @@
       },
       "type": "object"
     },
+    "WorkerLifecycleEvent": {
+      "description": "A report of an event in a worker's lifecycle.\nThe proto contains one event, because the worker is expected to\nasynchronously send each message immediately after the event.\nDue to this asynchrony, messages may arrive out of order (or missing), and it\nis up to the consumer to interpret.\nThe timestamp of the event is in the enclosing WorkerMessage proto.",
+      "id": "WorkerLifecycleEvent",
+      "properties": {
+        "containerStartTime": {
+          "description": "The start time of this container. All events will report this so that\nevents can be grouped together across container/VM restarts.",
+          "format": "google-datetime",
+          "type": "string"
+        },
+        "event": {
+          "description": "The event being reported.",
+          "enum": [
+            "UNKNOWN_EVENT",
+            "OS_START",
+            "CONTAINER_START",
+            "NETWORK_UP",
+            "STAGING_FILES_DOWNLOAD_START",
+            "STAGING_FILES_DOWNLOAD_FINISH",
+            "SDK_INSTALL_START",
+            "SDK_INSTALL_FINISH"
+          ],
+          "enumDescriptions": [
+            "Invalid event.",
+            "The time the VM started.",
+            "Our container code starts running. Multiple containers could be\ndistinguished with WorkerMessage.labels if desired.",
+            "The worker has a functional external network connection.",
+            "Started downloading staging files.",
+            "Finished downloading all staging files.",
+            "For applicable SDKs, started installation of SDK and worker packages.",
+            "Finished installing SDK."
+          ],
+          "type": "string"
+        },
+        "metadata": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Other stats that can accompany an event. E.g.\n{ \"downloaded_bytes\" : \"123456\" }",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "WorkerMessage": {
       "description": "WorkerMessage provides information to the backend about a worker.",
       "id": "WorkerMessage",
@@ -4851,6 +5115,10 @@
         "workerHealthReport": {
           "$ref": "WorkerHealthReport",
           "description": "The health of a worker."
+        },
+        "workerLifecycleEvent": {
+          "$ref": "WorkerLifecycleEvent",
+          "description": "Record of worker lifecycle events."
         },
         "workerMessageCode": {
           "$ref": "WorkerMessageCode",
@@ -5111,6 +5379,6 @@
     }
   },
   "servicePath": "",
-  "title": "Google Dataflow API",
+  "title": "Dataflow API",
   "version": "v1b3"
 }

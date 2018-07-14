@@ -1,4 +1,4 @@
-// Copyright 2018 Google Inc. All Rights Reserved.
+// Copyright 2018 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ package pubsub
 import (
 	"io"
 	"sync"
+	"time"
 
-	vkit "cloud.google.com/go/pubsub/apiv1"
 	gax "github.com/googleapis/gax-go"
 	"golang.org/x/net/context"
 	pb "google.golang.org/genproto/googleapis/pubsub/v1"
@@ -36,12 +36,17 @@ type pullStream struct {
 	err error // permanent error
 }
 
-func newPullStream(ctx context.Context, subc *vkit.SubscriberClient, subName string, ackDeadlineSecs int32) *pullStream {
+// for testing
+type streamingPullFunc func(context.Context, ...gax.CallOption) (pb.Subscriber_StreamingPullClient, error)
+
+func newPullStream(ctx context.Context, streamingPull streamingPullFunc, subName string, ackDeadlineSecs int32) *pullStream {
+	ctx = withSubscriptionKey(ctx, subName)
 	return &pullStream{
 		ctx: ctx,
 		open: func() (pb.Subscriber_StreamingPullClient, error) {
-			spc, err := subc.StreamingPull(ctx, gax.WithGRPCOptions(grpc.MaxCallRecvMsgSize(maxSendRecvBytes)))
+			spc, err := streamingPull(ctx, gax.WithGRPCOptions(grpc.MaxCallRecvMsgSize(maxSendRecvBytes)))
 			if err == nil {
+				recordStat(ctx, StreamRequestCount, 1)
 				err = spc.Send(&pb.StreamingPullRequest{
 					Subscription:             subName,
 					StreamAckDeadlineSeconds: ackDeadlineSecs,
@@ -91,8 +96,24 @@ func (s *pullStream) get(spc *pb.Subscriber_StreamingPullClient) (*pb.Subscriber
 	// The lock is held here for a long time, but it doesn't matter because no callers could get
 	// anything done anyway.
 	s.spc = new(pb.Subscriber_StreamingPullClient)
-	*s.spc, s.err = s.open() // Setting s.err means any error from open is permanent. Reconsider.
+	*s.spc, s.err = s.openWithRetry() // Any error from openWithRetry is permanent.
 	return s.spc, s.err
+}
+
+func (s *pullStream) openWithRetry() (pb.Subscriber_StreamingPullClient, error) {
+	var bo gax.Backoff
+	for {
+		recordStat(s.ctx, StreamOpenCount, 1)
+		spc, err := s.open()
+		if err != nil && isRetryable(err) {
+			recordStat(s.ctx, StreamRetryCount, 1)
+			if err := gax.Sleep(s.ctx, bo.Pause()); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		return spc, err
+	}
 }
 
 func (s *pullStream) call(f func(pb.Subscriber_StreamingPullClient) error) error {
@@ -104,17 +125,23 @@ func (s *pullStream) call(f func(pb.Subscriber_StreamingPullClient) error) error
 	for {
 		spc, err = s.get(spc)
 		if err != nil {
-			// Preserve the existing behavior of not retrying on open. Is that a bug?
-			// (If we do decide to retry, don't retry after we're closed.)
 			return err
 		}
+		start := time.Now()
 		err = f(*spc)
 		if err != nil {
 			if isRetryable(err) {
-				gax.Sleep(s.ctx, bo.Pause())
+				recordStat(s.ctx, StreamRetryCount, 1)
+				if time.Since(start) < 30*time.Second { // don't sleep if we've been blocked for a while
+					if err := gax.Sleep(s.ctx, bo.Pause()); err != nil {
+						return err
+					}
+				}
 				continue
 			}
+			s.mu.Lock()
 			s.err = err
+			s.mu.Unlock()
 		}
 		return err
 	}
@@ -122,6 +149,16 @@ func (s *pullStream) call(f func(pb.Subscriber_StreamingPullClient) error) error
 
 func (s *pullStream) Send(req *pb.StreamingPullRequest) error {
 	return s.call(func(spc pb.Subscriber_StreamingPullClient) error {
+		recordStat(s.ctx, AckCount, int64(len(req.AckIds)))
+		zeroes := 0
+		for _, mds := range req.ModifyDeadlineSeconds {
+			if mds == 0 {
+				zeroes++
+			}
+		}
+		recordStat(s.ctx, NackCount, int64(zeroes))
+		recordStat(s.ctx, ModAckCount, int64(len(req.ModifyDeadlineSeconds)-zeroes))
+		recordStat(s.ctx, StreamRequestCount, 1)
 		return spc.Send(req)
 	})
 }
@@ -130,7 +167,11 @@ func (s *pullStream) Recv() (*pb.StreamingPullResponse, error) {
 	var res *pb.StreamingPullResponse
 	err := s.call(func(spc pb.Subscriber_StreamingPullClient) error {
 		var err error
+		recordStat(s.ctx, StreamResponseCount, 1)
 		res, err = spc.Recv()
+		if err == nil {
+			recordStat(s.ctx, PullCount, int64(len(res.ReceivedMessages)))
+		}
 		return err
 	})
 	return res, err
