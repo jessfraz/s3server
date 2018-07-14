@@ -9,11 +9,11 @@ Static server for s3 or gcs files.
 
 #### Binaries
 
-- **darwin** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-darwin-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-darwin-amd64)
-- **freebsd** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-freebsd-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-freebsd-amd64)
-- **linux** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-linux-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-linux-amd64) / [arm](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-linux-arm) / [arm64](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-linux-arm64)
-- **solaris** [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-solaris-amd64)
-- **windows** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-windows-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.0/s3server-windows-amd64)
+- **darwin** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-darwin-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-darwin-amd64)
+- **freebsd** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-freebsd-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-freebsd-amd64)
+- **linux** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-linux-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-linux-amd64) / [arm](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-linux-arm) / [arm64](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-linux-arm64)
+- **solaris** [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-solaris-amd64)
+- **windows** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-windows-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.1/s3server-windows-amd64)
 
 #### Via Go
 
@@ -32,7 +32,7 @@ $ s3server -h
 |___/\__\__,_|\__|_|\___|___/\___|_|    \_/ \___|_|
 
  Server to index & view files in a s3 or Google Cloud Storage bucket.
- Version: v0.2.0
+ Version: v0.2.1
  Build: e5a60e2
 
   -bucket string
