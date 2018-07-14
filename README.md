@@ -33,14 +33,14 @@ $ s3server -h
 
  Server to index & view files in a s3 or Google Cloud Storage bucket.
  Version: v0.2.1
- Build: e5a60e2
+ Build: 0ea0e32
 
   -bucket string
         bucket path from which to serve files
   -cert string
         path to ssl certificate
-  -interval string
-        interval to generate new index.html's at (default "5m")
+  -interval duration
+        interval to generate new index.html's at (default 5m0s)
   -key string
         path to ssl key
   -p string

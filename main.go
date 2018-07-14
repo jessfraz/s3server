@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -36,7 +38,7 @@ const (
 var (
 	provider string
 	bucket   string
-	interval string
+	interval time.Duration
 
 	s3AccessKey string
 	s3SecretKey string
@@ -54,7 +56,7 @@ var (
 func init() {
 	flag.StringVar(&provider, "provider", "s3", "cloud provider (ex. s3, gcs)")
 	flag.StringVar(&bucket, "bucket", "", "bucket path from which to serve files")
-	flag.StringVar(&interval, "interval", "5m", "interval to generate new index.html's at")
+	flag.DurationVar(&interval, "interval", 5*time.Minute, "interval to generate new index.html's at")
 
 	flag.StringVar(&s3AccessKey, "s3key", "", "s3 access key")
 	flag.StringVar(&s3SecretKey, "s3secret", "", "s3 access secret")
@@ -86,6 +88,20 @@ func init() {
 }
 
 func main() {
+	ticker := time.NewTicker(interval)
+
+	// On ^C, or SIGTERM handle exit.
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGTERM)
+	go func() {
+		for sig := range c {
+			ticker.Stop()
+			logrus.Infof("Received %s, exiting.", sig.String())
+			os.Exit(0)
+		}
+	}()
+
 	// create a new provider
 	p, err := newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey)
 	if err != nil {
@@ -103,13 +119,6 @@ func main() {
 	if err := createStaticIndex(p, staticDir); err != nil {
 		logrus.Fatalf("Creating initial static index failed: %v", err)
 	}
-
-	// parse the duration
-	dur, err := time.ParseDuration(interval)
-	if err != nil {
-		logrus.Fatalf("parsing %s as duration failed: %v", interval, err)
-	}
-	ticker := time.NewTicker(dur)
 
 	go func() {
 		// create more indexes every X minutes based off interval
