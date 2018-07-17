@@ -1,23 +1,24 @@
-s3server
-========
+# s3server
 
-[![Travis CI](https://travis-ci.org/jessfraz/s3server.svg?branch=master)](https://travis-ci.org/jessfraz/s3server)
+[![Travis CI](https://img.shields.io/travis/jessfraz/s3server.svg?style=for-the-badge)](https://travis-ci.org/jessfraz/s3server)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/jessfraz/s3server)
 
 Static server for s3 or gcs files.
+
+ * [Installation](README.md#installation)
+      * [Binaries](README.md#binaries)
+      * [Via Go](README.md#via-go)
+ * [Usage](README.md#usage)
 
 ## Installation
 
 #### Binaries
 
-- **darwin** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-darwin-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-darwin-amd64)
-- **freebsd** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-freebsd-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-freebsd-amd64)
-- **linux** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-linux-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-linux-amd64) / [arm](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-linux-arm) / [arm64](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-linux-arm64)
-- **solaris** [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-solaris-amd64)
-- **windows** [386](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-windows-386) / [amd64](https://github.com/jessfraz/s3server/releases/download/v0.2.2/s3server-windows-amd64)
+For installation instructions from binaries please visit the [Releases Page](https://github.com/jessfraz/s3server/releases).
 
 #### Via Go
 
-```bash
+```console
 $ go get github.com/jessfraz/s3server
 ```
 

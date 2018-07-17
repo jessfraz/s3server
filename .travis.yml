@@ -18,39 +18,39 @@ jobs:
       deploy:
         provider: releases
         file:
-          - cross/s3server-linux-amd64.md5
-          - cross/s3server-windows-386.sha256
-          - cross/s3server-linux-arm
-          - cross/s3server-darwin-amd64.md5
           - cross/s3server-darwin-amd64
-          - cross/s3server-solaris-amd64.md5
-          - cross/s3server-linux-arm64.sha256
-          - cross/s3server-linux-arm.sha256
-          - cross/s3server-linux-386.sha256
+          - cross/s3server-darwin-amd64.md5
+          - cross/s3server-darwin-amd64.sha256
+          - cross/s3server-darwin-386
           - cross/s3server-darwin-386.md5
-          - cross/s3server-windows-386.md5
+          - cross/s3server-darwin-386.sha256
+          - cross/s3server-freebsd-amd64
           - cross/s3server-freebsd-amd64.md5
-          - cross/s3server-linux-arm64.md5
-          - cross/s3server-linux-arm64
           - cross/s3server-freebsd-amd64.sha256
-          - cross/s3server-freebsd-386.md5
-          - cross/s3server-linux-amd64.sha256
-          - cross/s3server-linux-386.md5
           - cross/s3server-freebsd-386
+          - cross/s3server-freebsd-386.md5
+          - cross/s3server-freebsd-386.sha256
+          - cross/s3server-linux-arm
+          - cross/s3server-linux-arm.md5
+          - cross/s3server-linux-arm.sha256
+          - cross/s3server-linux-arm64
+          - cross/s3server-linux-arm64.md5
+          - cross/s3server-linux-arm64.sha256
+          - cross/s3server-linux-amd64
+          - cross/s3server-linux-amd64.md5
+          - cross/s3server-linux-amd64.sha256
+          - cross/s3server-linux-386
+          - cross/s3server-linux-386.md5
+          - cross/s3server-linux-386.sha256
+          - cross/s3server-solaris-amd64
+          - cross/s3server-solaris-amd64.md5
           - cross/s3server-solaris-amd64.sha256
           - cross/s3server-windows-amd64
           - cross/s3server-windows-amd64.md5
           - cross/s3server-windows-amd64.sha256
-          - cross/s3server-linux-arm.md5
-          - cross/s3server-darwin-386.sha256
-          - cross/s3server-darwin-amd64.sha256
           - cross/s3server-windows-386
-          - cross/s3server-solaris-amd64
-          - cross/s3server-darwin-386
-          - cross/s3server-linux-386
-          - cross/s3server-freebsd-amd64
-          - cross/s3server-freebsd-386.sha256
-          - cross/s3server-linux-amd64
+          - cross/s3server-windows-386.md5
+          - cross/s3server-windows-386.sha256
         skip_cleanup: true
         on:
           tags: true
