@@ -26,37 +26,26 @@ $ go get github.com/jessfraz/s3server
 
 ```console
 $ s3server -h
-     _        _   _
- ___| |_ __ _| |_(_) ___ ___  ___ _ ____   _____ _ __
-/ __| __/ _` | __| |/ __/ __|/ _ \ '__\ \ / / _ \ '__|
-\__ \ || (_| | |_| | (__\__ \  __/ |   \ V /  __/ |
-|___/\__\__,_|\__|_|\___|___/\___|_|    \_/ \___|_|
+s3server -  Server to index & view files in a s3 or Google Cloud Storage bucket.
 
- Server to index & view files in a s3 or Google Cloud Storage bucket.
- Version: v0.2.2
- Build: 0ea0e32
+Usage: s3server <command>
 
-  -bucket string
-        bucket path from which to serve files
-  -cert string
-        path to ssl certificate
-  -interval duration
-        interval to generate new index.html's at (default 5m0s)
-  -key string
-        path to ssl key
-  -p string
-        port for server to run on (default "8080")
-  -provider string
-        cloud provider (ex. s3, gcs) (default "s3")
-  -s3key string
-        s3 access key
-  -s3region string
-        aws region for the bucket (default "us-west-2")
-  -s3secret string
-        s3 access secret
-  -v    print version and exit (shorthand)
-  -version
-        print version and exit
+Flags:
+
+  --bucket    bucket path from which to serve files (default: <none>)
+  --cert      path to ssl certificate (default: <none>)
+  -d          enable debug logging (default: false)
+  --interval  interval to generate new index.html's at (default: 5m0s)
+  --key       path to ssl key (default: <none>)
+  -p          port for server to run on (default: 8080)
+  --provider  cloud provider (ex. s3, gcs) (default: s3)
+  --s3key     s3 access key (default: <none>)
+  --s3region  aws region for the bucket (default: us-west-2)
+  --s3secret  s3 access secret (default: <none>)
+
+Commands:
+
+  version  Show the version information.
 ```
 
 **run with the docker image**

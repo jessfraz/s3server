@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -16,23 +17,9 @@ import (
 
 	"cloud.google.com/go/storage"
 	units "github.com/docker/go-units"
+	"github.com/genuinetools/pkg/cli"
 	"github.com/jessfraz/s3server/version"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	// BANNER is what is printed for help/info output.
-	BANNER = `     _        _   _
- ___| |_ __ _| |_(_) ___ ___  ___ _ ____   _____ _ __
-/ __| __/ _` + "`" + ` | __| |/ __/ __|/ _ \ '__\ \ / / _ \ '__|
-\__ \ || (_| | |_| | (__\__ \  __/ |   \ V /  __/ |
-|___/\__\__,_|\__|_|\___|___/\___|_|    \_/ \___|_|
-
- Server to index & view files in a s3 or Google Cloud Storage bucket.
- Version: %s
- Build: %s
-
-`
 )
 
 var (
@@ -50,106 +37,119 @@ var (
 
 	updating bool
 
-	vrsn bool
+	debug bool
 )
 
-func init() {
-	flag.StringVar(&provider, "provider", "s3", "cloud provider (ex. s3, gcs)")
-	flag.StringVar(&bucket, "bucket", "", "bucket path from which to serve files")
-	flag.DurationVar(&interval, "interval", 5*time.Minute, "interval to generate new index.html's at")
-
-	flag.StringVar(&s3AccessKey, "s3key", "", "s3 access key")
-	flag.StringVar(&s3SecretKey, "s3secret", "", "s3 access secret")
-	flag.StringVar(&s3Region, "s3region", "us-west-2", "aws region for the bucket")
-
-	flag.StringVar(&port, "p", "8080", "port for server to run on")
-
-	flag.StringVar(&certFile, "cert", "", "path to ssl certificate")
-	flag.StringVar(&keyFile, "key", "", "path to ssl key")
-
-	flag.BoolVar(&vrsn, "version", false, "print version and exit")
-	flag.BoolVar(&vrsn, "v", false, "print version and exit (shorthand)")
-
-	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(BANNER, version.VERSION, version.GITCOMMIT))
-		flag.PrintDefaults()
-	}
-
-	flag.Parse()
-
-	if vrsn {
-		fmt.Printf("staticserver version %s, build %s", version.VERSION, version.GITCOMMIT)
-		os.Exit(0)
-	}
-
-	if provider != "s3" && provider != "gcs" {
-		logrus.Fatalf("%s is not a valid provider, try `s3` or `gcs`.", provider)
-	}
-}
-
 func main() {
-	ticker := time.NewTicker(interval)
+	// Create a new cli program.
+	p := cli.NewProgram()
+	p.Name = "s3server"
+	p.Description = "Server to index & view files in a s3 or Google Cloud Storage bucket"
 
-	// On ^C, or SIGTERM handle exit.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	signal.Notify(c, syscall.SIGTERM)
-	go func() {
-		for sig := range c {
-			ticker.Stop()
-			logrus.Infof("Received %s, exiting.", sig.String())
-			os.Exit(0)
+	// Set the GitCommit and Version.
+	p.GitCommit = version.GITCOMMIT
+	p.Version = version.VERSION
+
+	// Setup the global flags.
+	p.FlagSet = flag.NewFlagSet("global", flag.ExitOnError)
+	p.FlagSet.StringVar(&provider, "provider", "s3", "cloud provider (ex. s3, gcs)")
+	p.FlagSet.StringVar(&bucket, "bucket", "", "bucket path from which to serve files")
+	p.FlagSet.DurationVar(&interval, "interval", 5*time.Minute, "interval to generate new index.html's at")
+
+	p.FlagSet.StringVar(&s3AccessKey, "s3key", "", "s3 access key")
+	p.FlagSet.StringVar(&s3SecretKey, "s3secret", "", "s3 access secret")
+	p.FlagSet.StringVar(&s3Region, "s3region", "us-west-2", "aws region for the bucket")
+
+	p.FlagSet.StringVar(&port, "p", "8080", "port for server to run on")
+
+	p.FlagSet.StringVar(&certFile, "cert", "", "path to ssl certificate")
+	p.FlagSet.StringVar(&keyFile, "key", "", "path to ssl key")
+
+	p.FlagSet.BoolVar(&debug, "d", false, "enable debug logging")
+
+	// Set the before function.
+	p.Before = func(ctx context.Context) error {
+		// Set the log level.
+		if debug {
+			logrus.SetLevel(logrus.DebugLevel)
 		}
-	}()
 
-	// create a new provider
-	p, err := newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey)
-	if err != nil {
-		logrus.Fatalf("Creating new provider failed: %v", err)
+		if provider != "s3" && provider != "gcs" {
+			return fmt.Errorf("%s is not a valid provider, try `s3` or `gcs`", provider)
+		}
+
+		return nil
 	}
 
-	// get the path to the static directory
-	wd, err := os.Getwd()
-	if err != nil {
-		logrus.Fatalf("Getting working directory failed: %v", err)
-	}
-	staticDir := filepath.Join(wd, "static")
+	// Set the main program action.
+	p.Action = func(ctx context.Context, args []string) error {
+		ticker := time.NewTicker(interval)
 
-	// create the initial index
-	if err := createStaticIndex(p, staticDir); err != nil {
-		logrus.Fatalf("Creating initial static index failed: %v", err)
-	}
+		// On ^C, or SIGTERM handle exit.
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		signal.Notify(c, syscall.SIGTERM)
+		go func() {
+			for sig := range c {
+				ticker.Stop()
+				logrus.Infof("Received %s, exiting.", sig.String())
+				os.Exit(0)
+			}
+		}()
 
-	go func() {
-		// create more indexes every X minutes based off interval
-		for range ticker.C {
-			if !updating {
-				if err := createStaticIndex(p, staticDir); err != nil {
-					logrus.Warnf("creating static index failed: %v", err)
-					updating = false
+		// create a new provider
+		p, err := newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey)
+		if err != nil {
+			logrus.Fatalf("Creating new provider failed: %v", err)
+		}
+
+		// get the path to the static directory
+		wd, err := os.Getwd()
+		if err != nil {
+			logrus.Fatalf("Getting working directory failed: %v", err)
+		}
+		staticDir := filepath.Join(wd, "static")
+
+		// create the initial index
+		if err := createStaticIndex(p, staticDir); err != nil {
+			logrus.Fatalf("Creating initial static index failed: %v", err)
+		}
+
+		go func() {
+			// create more indexes every X minutes based off interval
+			for range ticker.C {
+				if !updating {
+					if err := createStaticIndex(p, staticDir); err != nil {
+						logrus.Warnf("creating static index failed: %v", err)
+						updating = false
+					}
 				}
 			}
+		}()
+
+		// create mux server
+		mux := http.NewServeMux()
+
+		// static files handler
+		staticHandler := http.FileServer(http.Dir(staticDir))
+		mux.Handle("/", staticHandler)
+
+		// set up the server
+		server := &http.Server{
+			Addr:    ":" + port,
+			Handler: mux,
 		}
-	}()
-
-	// create mux server
-	mux := http.NewServeMux()
-
-	// static files handler
-	staticHandler := http.FileServer(http.Dir(staticDir))
-	mux.Handle("/", staticHandler)
-
-	// set up the server
-	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: mux,
+		logrus.Infof("Starting server on port %q", port)
+		if certFile != "" && keyFile != "" {
+			logrus.Fatal(server.ListenAndServeTLS(certFile, keyFile))
+		} else {
+			logrus.Fatal(server.ListenAndServe())
+		}
+		return nil
 	}
-	logrus.Infof("Starting server on port %q", port)
-	if certFile != "" && keyFile != "" {
-		logrus.Fatal(server.ListenAndServeTLS(certFile, keyFile))
-	} else {
-		logrus.Fatal(server.ListenAndServe())
-	}
+
+	// Run our program.
+	p.Run()
 }
 
 type object struct {
