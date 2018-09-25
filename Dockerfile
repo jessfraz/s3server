@@ -23,13 +23,10 @@ RUN set -x \
 	&& rm -rf /go \
 	&& echo "Build complete."
 
-FROM scratch
+FROM alpine:latest
 
 COPY --from=builder /usr/bin/s3server /usr/bin/s3server
 COPY --from=builder /etc/ssl/certs/ /etc/ssl/certs
-
-COPY static /static
-COPY templates /templates
 
 ENTRYPOINT [ "s3server" ]
 CMD [ "--help" ]
