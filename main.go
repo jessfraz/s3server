@@ -176,7 +176,7 @@ func createStaticIndex(p cloud, staticDir string) error {
 	logrus.Infof("fetching files from %s", p.BaseURL())
 	files, err := p.List(p.Prefix(), p.Prefix(), "", max, q)
 	if err != nil {
-		return fmt.Errorf("Listing all files in bucket failed: %v", err)
+		return fmt.Errorf("listing all files in bucket failed: %v", err)
 	}
 
 	// set up custom functions

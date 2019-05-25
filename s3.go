@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"cloud.google.com/go/storage"
 	"github.com/mitchellh/goamz/s3"
 )
@@ -12,7 +10,6 @@ type s3Provider struct {
 	prefix  string
 	baseURL string
 	client  *s3.S3
-	ctx     context.Context
 	b       *s3.Bucket
 }
 

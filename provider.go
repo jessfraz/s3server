@@ -83,7 +83,7 @@ func getRegion(name string) (aws.Region, error) {
 	}
 	region, ok := regions[name]
 	if !ok {
-		return aws.Region{}, fmt.Errorf("No region matches %s", name)
+		return aws.Region{}, fmt.Errorf("no region matches %s", name)
 	}
 	return region, nil
 }
