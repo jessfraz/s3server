@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"cloud.google.com/go/storage"
-	"github.com/mitchellh/goamz/aws"
-	"github.com/mitchellh/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	awsCredentials "github.com/aws/aws-sdk-go/aws/credentials"
+	awsSession "github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type cloud interface {
@@ -17,35 +18,26 @@ type cloud interface {
 }
 
 func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (cloud, error) {
+	bucket, prefix := cleanBucketName(bucket)
+
 	if provider == "s3" {
 		// auth with aws
-		auth, err := aws.GetAuth(s3AccessKey, s3SecretKey)
-		if err != nil {
-			return nil, err
-		}
+		conf := newAwsConfig(s3Region, s3AccessKey, s3SecretKey)
 
 		// create the client
-		region, err := getRegion(s3Region)
-		if err != nil {
-			return nil, err
-		}
-
-		p := s3Provider{bucket: bucket}
-		p.client = s3.New(auth, region)
-		bucket, p.prefix = cleanBucketName(p.bucket)
-		p.b = p.client.Bucket(bucket)
+		p := s3Provider{bucket: bucket, prefix: prefix}
+		p.client = s3.New(awsSession.New(conf))
 		p.baseURL = p.bucket + ".s3.amazonaws.com"
 		return &p, nil
 	}
 
-	p := gcsProvider{bucket: bucket}
+	p := gcsProvider{bucket: bucket, prefix: prefix}
 	p.ctx = context.Background()
 	client, err := storage.NewClient(p.ctx)
 	if err != nil {
 		return nil, err
 	}
 	p.client = client
-	p.bucket, p.prefix = cleanBucketName(p.bucket)
 	p.b = client.Bucket(p.bucket)
 	p.baseURL = p.bucket
 	if !strings.Contains(p.bucket, "j3ss.co") {
@@ -67,23 +59,18 @@ func cleanBucketName(bucket string) (string, string) {
 	return parts[0], parts[1]
 }
 
-// getRegion returns the aws region that is matches a given string.
-func getRegion(name string) (aws.Region, error) {
-	var regions = map[string]aws.Region{
-		aws.APNortheast.Name:  aws.APNortheast,
-		aws.APSoutheast.Name:  aws.APSoutheast,
-		aws.APSoutheast2.Name: aws.APSoutheast2,
-		aws.EUCentral.Name:    aws.EUCentral,
-		aws.EUWest.Name:       aws.EUWest,
-		aws.USEast.Name:       aws.USEast,
-		aws.USWest.Name:       aws.USWest,
-		aws.USWest2.Name:      aws.USWest2,
-		aws.USGovWest.Name:    aws.USGovWest,
-		aws.SAEast.Name:       aws.SAEast,
-	}
-	region, ok := regions[name]
-	if !ok {
-		return aws.Region{}, fmt.Errorf("no region matches %s", name)
-	}
-	return region, nil
+func newAwsConfig(region, accessKey, secretKey string) *aws.Config {
+	conf := aws.NewConfig()
+	conf.WithRegion(region)
+	conf.WithCredentials(awsCredentials.NewChainCredentials([]awsCredentials.Provider{
+		&awsCredentials.StaticProvider{
+			Value: awsCredentials.Value{
+				AccessKeyID:     accessKey,
+				SecretAccessKey: secretKey,
+			},
+		},
+		&awsCredentials.EnvProvider{},
+		&awsCredentials.SharedCredentialsProvider{},
+	}))
+	return conf
 }
