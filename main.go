@@ -27,6 +27,7 @@ var (
 	bucket   string
 	interval time.Duration
 
+	s3Endpoint  string
 	s3AccessKey string
 	s3SecretKey string
 	s3Region    string
@@ -56,6 +57,7 @@ func main() {
 	p.FlagSet.StringVar(&bucket, "bucket", "", "bucket path from which to serve files")
 	p.FlagSet.DurationVar(&interval, "interval", 5*time.Minute, "interval to generate new index.html's at")
 
+	p.FlagSet.StringVar(&s3Endpoint, "s3endpoint", "amazonaws.com", "s3 endpoint base")
 	p.FlagSet.StringVar(&s3AccessKey, "s3key", "", "s3 access key")
 	p.FlagSet.StringVar(&s3SecretKey, "s3secret", "", "s3 access secret")
 	p.FlagSet.StringVar(&s3Region, "s3region", "us-west-2", "aws region for the bucket")
@@ -98,7 +100,7 @@ func main() {
 		}()
 
 		// create a new provider
-		p, err := newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey)
+		p, err := newProvider(provider, bucket, s3Endpoint, s3Region, s3AccessKey, s3SecretKey)
 		if err != nil {
 			logrus.Fatalf("Creating new provider failed: %v", err)
 		}

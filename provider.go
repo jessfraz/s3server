@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"cloud.google.com/go/storage"
@@ -17,17 +18,17 @@ type cloud interface {
 	BaseURL() string
 }
 
-func newProvider(provider, bucket, s3Region, s3AccessKey, s3SecretKey string) (cloud, error) {
+func newProvider(provider, bucket, s3Endpoint, s3Region, s3AccessKey, s3SecretKey string) (cloud, error) {
 	bucket, prefix := cleanBucketName(bucket)
 
 	if provider == "s3" {
 		// auth with aws
-		conf := newAwsConfig(s3Region, s3AccessKey, s3SecretKey)
+		conf := newAwsConfig(s3Endpoint, s3Region, s3AccessKey, s3SecretKey)
 
 		// create the client
 		p := s3Provider{bucket: bucket, prefix: prefix}
 		p.client = s3.New(awsSession.New(conf))
-		p.baseURL = p.bucket + ".s3.amazonaws.com"
+		p.baseURL = fmt.Sprintf("%s.%s", p.bucket, *conf.Endpoint)
 		return &p, nil
 	}
 
@@ -59,8 +60,9 @@ func cleanBucketName(bucket string) (string, string) {
 	return parts[0], parts[1]
 }
 
-func newAwsConfig(region, accessKey, secretKey string) *aws.Config {
+func newAwsConfig(endpoint, region, accessKey, secretKey string) *aws.Config {
 	conf := aws.NewConfig()
+	conf.WithEndpoint(fmt.Sprintf("s3.%s.%s", region, endpoint))
 	conf.WithRegion(region)
 	conf.WithCredentials(awsCredentials.NewChainCredentials([]awsCredentials.Provider{
 		&awsCredentials.StaticProvider{
