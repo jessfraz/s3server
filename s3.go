@@ -2,7 +2,9 @@ package main
 
 import (
 	"cloud.google.com/go/storage"
-	"github.com/mitchellh/goamz/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/sirupsen/logrus"
 )
 
 type s3Provider struct {
@@ -10,34 +12,29 @@ type s3Provider struct {
 	prefix  string
 	baseURL string
 	client  *s3.S3
-	b       *s3.Bucket
 }
 
 // List returns the files in an s3 bucket.
 func (c *s3Provider) List(prefix, delimiter, marker string, max int, q *storage.Query) (files []object, err error) {
-	resp, err := c.b.List(prefix, delimiter, marker, max)
-	if err != nil {
-		return nil, err
-	}
-
-	// append to files
-	for _, f := range resp.Contents {
-		files = append(files, object{
-			Name:    f.Key,
-			Size:    f.Size,
-			BaseURL: c.BaseURL(),
-		})
-	}
-
-	// recursion for the recursion god
-	if resp.IsTruncated && resp.NextMarker != "" {
-		f, err := c.List(resp.Prefix, resp.Delimiter, resp.NextMarker, resp.MaxKeys, q)
-		if err != nil {
-			return nil, err
+	err = c.client.ListObjectsV2Pages(&s3.ListObjectsV2Input{
+		Bucket: aws.String(c.bucket),
+		Delimiter: aws.String(delimiter),
+		Prefix: aws.String(prefix),
+		MaxKeys: aws.Int64(int64(max)),
+	}, func(p *s3.ListObjectsV2Output, lastPage bool) bool {
+		for _, o := range p.Contents {
+			files = append(files, object{
+				Name:    aws.StringValue(o.Key),
+				Size:    aws.Int64Value(o.Size),
+				BaseURL: c.baseURL,
+			})
 		}
 
-		// append to files
-		files = append(files, f...)
+		return true // continue paging
+	})
+
+ 	if err != nil {
+		logrus.Fatalf("Failed to list objects for bucket, %s, %v", c.bucket, err)
 	}
 
 	return files, nil
