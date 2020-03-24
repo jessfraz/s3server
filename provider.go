@@ -54,7 +54,7 @@ func cleanBucketName(bucket string) (string, string) {
 	bucket = strings.TrimPrefix(bucket, "gcs://")
 	parts := strings.SplitN(bucket, "/", 2)
 	if len(parts) == 1 {
-		return bucket, "/"
+		return bucket, ""
 	}
 
 	return parts[0], parts[1]
