@@ -1,3 +1,11 @@
+# s3server
+
+[![make-all](https://github.com/jessfraz/s3server/workflows/make%20all/badge.svg)](https://github.com/jessfraz/s3server/actions?query=workflow%3A%22make+all%22)
+[![make-image](https://github.com/jessfraz/s3server/workflows/make%20image/badge.svg)](https://github.com/jessfraz/s3server/actions?query=workflow%3A%22make+image%22)
+[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/jessfraz/s3server)
+
+Static server for s3 or gcs files.
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
@@ -10,24 +18,6 @@
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
-# s3server
-
-[![make-all](https://github.com/jessfraz/s3server/workflows/make%20all/badge.svg)](https://github.com/jessfraz/s3server/actions?query=workflow%3A%22make+all%22)
-[![make-image](https://github.com/jessfraz/s3server/workflows/make%20image/badge.svg)](https://github.com/jessfraz/s3server/actions?query=workflow%3A%22make+image%22)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-5272B4.svg?style=for-the-badge)](https://godoc.org/github.com/jessfraz/s3server)
-
-Static server for s3 or gcs files.
-
-**Table of Contents**
-
-<!-- toc -->
-
-- [Installation](#installation)
-    + [Binaries](#binaries)
-    + [Via Go](#via-go)
-- [Usage](#usage)
-
-<!-- tocstop -->
 
 ## Installation
 

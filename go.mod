@@ -1,5 +1,7 @@
 module github.com/jessfraz/s3server
 
+go 1.14
+
 require (
 	cloud.google.com/go v0.25.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -7,7 +9,7 @@ require (
 	github.com/genuinetools/pkg v0.0.0-20180717144208-764bcdebd5f7
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
-	github.com/google/martian v2.0.0-beta.2+incompatible // indirect
+	github.com/google/martian v2.1.0+incompatible // indirect
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/mitchellh/goamz v0.0.0-20150317174335-caaaea8b30ee
 	github.com/motain/gocheck v0.0.0-20131023154940-9beb271d26e6 // indirect
@@ -25,4 +27,5 @@ require (
 	google.golang.org/grpc v1.13.0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
