@@ -10,11 +10,10 @@ Static server for s3 or gcs files.
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**
 
-- [s3server](#s3server)
-  - [Installation](#installation)
-      - [Binaries](#binaries)
-      - [Via Go](#via-go)
-  - [Usage](#usage)
+- [Installation](#installation)
+    - [Binaries](#binaries)
+    - [Via Go](#via-go)
+- [Usage](#usage)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
