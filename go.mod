@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.2.2 // indirect
 	github.com/vaughan0/go-ini v0.0.0-20130923145212-a98ad7ee00ec // indirect
 	go.opencensus.io v0.14.0 // indirect
-	golang.org/x/crypto v0.0.0-20180621125126-a49355c7e3f8 // indirect
+	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/oauth2 v0.0.0-20180620175406-ef147856a6dd // indirect
 	google.golang.org/api v0.0.0-20180717000714-0025a57598c0
 	google.golang.org/appengine v1.1.0 // indirect
@@ -27,5 +27,6 @@ require (
 	google.golang.org/grpc v1.13.0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
 	launchpad.net/gocheck v0.0.0-20140225173054-000000000087 // indirect
 )
