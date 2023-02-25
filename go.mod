@@ -20,10 +20,8 @@ require (
 	github.com/stretchr/testify v1.2.2 // indirect
 	github.com/vaughan0/go-ini v0.0.0-20130923145212-a98ad7ee00ec // indirect
 	go.opencensus.io v0.14.0 // indirect
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
-	golang.org/x/net v0.0.0-20190620200207-3b0461eec859 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20180620175406-ef147856a6dd // indirect
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	google.golang.org/api v0.0.0-20180717000714-0025a57598c0
 	google.golang.org/appengine v1.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20180716172848-2731d4fa720b // indirect
