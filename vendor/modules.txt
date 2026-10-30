@@ -18,6 +18,7 @@ github.com/genuinetools/pkg/cli
 # github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 ## explicit
 # github.com/golang/protobuf v1.2.0
+## explicit
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/protoc-gen-go/descriptor
 github.com/golang/protobuf/ptypes
@@ -31,15 +32,11 @@ github.com/golang/protobuf/ptypes/timestamp
 # github.com/googleapis/gax-go v2.0.0+incompatible
 ## explicit
 github.com/googleapis/gax-go
-# github.com/kr/pretty v0.1.0
-## explicit
 # github.com/mitchellh/goamz v0.0.0-20150317174335-caaaea8b30ee
 ## explicit
 github.com/mitchellh/goamz/aws
 github.com/mitchellh/goamz/s3
 # github.com/motain/gocheck v0.0.0-20131023154940-9beb271d26e6
-## explicit
-# github.com/onsi/gomega v1.4.2
 ## explicit
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
@@ -67,9 +64,10 @@ go.opencensus.io/trace
 go.opencensus.io/trace/internal
 go.opencensus.io/trace/propagation
 # golang.org/x/crypto v0.1.0
-## explicit
+## explicit; go 1.17
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.1.0
+## explicit; go 1.17
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/http/httpguts
@@ -85,14 +83,19 @@ golang.org/x/oauth2/google
 golang.org/x/oauth2/internal
 golang.org/x/oauth2/jws
 golang.org/x/oauth2/jwt
+# golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+## explicit
 # golang.org/x/sys v0.1.0
+## explicit; go 1.17
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/term v0.1.0
+## explicit; go 1.17
 golang.org/x/term
 # golang.org/x/text v0.4.0
+## explicit; go 1.17
 golang.org/x/text/secure/bidirule
 golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
@@ -155,9 +158,5 @@ google.golang.org/grpc/tap
 google.golang.org/grpc/transport
 # gopkg.in/airbrake/gobrake.v2 v2.0.9
 ## explicit
-# gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
-## explicit
 # gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2
-## explicit
-# launchpad.net/gocheck v0.0.0-20140225173054-000000000087
 ## explicit
