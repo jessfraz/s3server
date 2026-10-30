@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -195,7 +194,7 @@ func createStaticIndex(p cloud, staticDir string) error {
 
 	// create temporoary file to save template to
 	logrus.Info("creating temporary file for template")
-	f, err := ioutil.TempFile("", "s3server")
+	f, err := os.CreateTemp("", "s3server")
 	if err != nil {
 		return fmt.Errorf("creating temp file failed: %v", err)
 	}

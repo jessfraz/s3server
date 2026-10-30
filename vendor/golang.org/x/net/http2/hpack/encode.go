@@ -39,7 +39,6 @@ func NewEncoder(w io.Writer) *Encoder {
 		tableSizeUpdate: false,
 		w:               w,
 	}
-	e.dynTab.table.init()
 	e.dynTab.setMaxSize(initialHeaderTableSize)
 	return e
 }
@@ -114,6 +113,11 @@ func (e *Encoder) SetMaxDynamicTableSize(v uint32) {
 	}
 	e.tableSizeUpdate = true
 	e.dynTab.setMaxSize(v)
+}
+
+// MaxDynamicTableSize returns the current dynamic header table size.
+func (e *Encoder) MaxDynamicTableSize() (v uint32) {
+	return e.dynTab.maxSize
 }
 
 // SetMaxDynamicTableSizeLimit changes the maximum value that can be

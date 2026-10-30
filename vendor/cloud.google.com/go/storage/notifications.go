@@ -15,12 +15,11 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
 
-	"cloud.google.com/go/internal/trace"
-	"golang.org/x/net/context"
 	raw "google.golang.org/api/storage/v1"
 )
 
@@ -91,7 +90,7 @@ func toNotification(rn *raw.Notification) *Notification {
 	return n
 }
 
-var topicRE = regexp.MustCompile("^//pubsub.googleapis.com/projects/([^/]+)/topics/([^/]+)")
+var topicRE = regexp.MustCompile(`^//pubsub\.googleapis\.com/projects/([^/]+)/topics/([^/]+)`)
 
 // parseNotificationTopic extracts the project and topic IDs from from the full
 // resource name returned by the service. If the name is malformed, it returns
@@ -119,9 +118,10 @@ func toRawNotification(n *Notification) *raw.Notification {
 // AddNotification adds a notification to b. You must set n's TopicProjectID, TopicID
 // and PayloadFormat, and must not set its ID. The other fields are all optional. The
 // returned Notification's ID can be used to refer to it.
+// Note: gRPC is not supported.
 func (b *BucketHandle) AddNotification(ctx context.Context, n *Notification) (ret *Notification, err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.AddNotification")
-	defer func() { trace.EndSpan(ctx, err) }()
+	ctx, _ = startSpan(ctx, "Bucket.AddNotification")
+	defer func() { endSpan(ctx, err) }()
 
 	if n.ID != "" {
 		return nil, errors.New("storage: AddNotification: ID must not be set")
@@ -132,38 +132,22 @@ func (b *BucketHandle) AddNotification(ctx context.Context, n *Notification) (re
 	if n.TopicID == "" {
 		return nil, errors.New("storage: AddNotification: missing TopicID")
 	}
-	call := b.c.raw.Notifications.Insert(b.name, toRawNotification(n))
-	setClientHeader(call.Header())
-	if b.userProject != "" {
-		call.UserProject(b.userProject)
-	}
-	rn, err := call.Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	return toNotification(rn), nil
+
+	opts := makeStorageOpts(false, b.retry, b.userProject)
+	ret, err = b.c.tc.CreateNotification(ctx, b.name, n, opts...)
+	return ret, err
 }
 
 // Notifications returns all the Notifications configured for this bucket, as a map
 // indexed by notification ID.
+// Note: gRPC is not supported.
 func (b *BucketHandle) Notifications(ctx context.Context) (n map[string]*Notification, err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.Notifications")
-	defer func() { trace.EndSpan(ctx, err) }()
+	ctx, _ = startSpan(ctx, "Bucket.Notifications")
+	defer func() { endSpan(ctx, err) }()
 
-	call := b.c.raw.Notifications.List(b.name)
-	setClientHeader(call.Header())
-	if b.userProject != "" {
-		call.UserProject(b.userProject)
-	}
-	var res *raw.Notifications
-	err = runWithRetry(ctx, func() error {
-		res, err = call.Context(ctx).Do()
-		return err
-	})
-	if err != nil {
-		return nil, err
-	}
-	return notificationsToMap(res.Items), nil
+	opts := makeStorageOpts(true, b.retry, b.userProject)
+	n, err = b.c.tc.ListNotifications(ctx, b.name, opts...)
+	return n, err
 }
 
 func notificationsToMap(rns []*raw.Notification) map[string]*Notification {
@@ -175,14 +159,11 @@ func notificationsToMap(rns []*raw.Notification) map[string]*Notification {
 }
 
 // DeleteNotification deletes the notification with the given ID.
+// Note: gRPC is not supported.
 func (b *BucketHandle) DeleteNotification(ctx context.Context, id string) (err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.DeleteNotification")
-	defer func() { trace.EndSpan(ctx, err) }()
+	ctx, _ = startSpan(ctx, "Bucket.DeleteNotification")
+	defer func() { endSpan(ctx, err) }()
 
-	call := b.c.raw.Notifications.Delete(b.name, id)
-	setClientHeader(call.Header())
-	if b.userProject != "" {
-		call.UserProject(b.userProject)
-	}
-	return call.Context(ctx).Do()
+	opts := makeStorageOpts(true, b.retry, b.userProject)
+	return b.c.tc.DeleteNotification(ctx, b.name, id, opts...)
 }
