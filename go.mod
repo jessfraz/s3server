@@ -7,7 +7,7 @@ require (
 	github.com/docker/go-units v0.3.3
 	github.com/genuinetools/pkg v0.0.0-20180717144208-764bcdebd5f7
 	github.com/mitchellh/goamz v0.0.0-20150317174335-caaaea8b30ee
-	github.com/sirupsen/logrus v1.0.5
+	github.com/sirupsen/logrus v1.8.3
 	google.golang.org/api v0.287.1
 )
 
@@ -52,7 +52,6 @@ require (
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto v0.0.0-20260817212433-ac3dfec99bb1 // indirect
@@ -60,6 +59,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 	google.golang.org/grpc v1.85.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
-	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
-	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 )
